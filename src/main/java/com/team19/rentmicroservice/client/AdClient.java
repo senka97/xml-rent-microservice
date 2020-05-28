@@ -4,6 +4,9 @@ import com.team19.rentmicroservice.dto.AdDTO;
 import com.team19.rentmicroservice.dto.CartItemDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
+import com.team19.rentmicroservice.dto.AdDTOSimple;
+import org.springframework.cloud.openfeign.FeignClient;
+
 
 import java.util.List;
 
@@ -11,10 +14,15 @@ import java.util.List;
 public interface AdClient {
 
     @GetMapping("api/ads/{id}/owner")
-    Long getAd(@PathVariable("id") Long id, @RequestHeader("permissions") String permissions,
-                @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
+    Long getAdOwner(@PathVariable("id") Long id, @RequestHeader("permissions") String permissions,
+               @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
 
     @PostMapping("api/ads/cartItems")
     List<CartItemDTO> findAds(@RequestBody List<CartItemDTO> cartItems, @RequestHeader("permissions") String permissions,
                               @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
+
+    @GetMapping(value = "api/getAd/{id}", produces = "application/json")
+    AdDTOSimple getAd(@PathVariable("id") Long id, @RequestHeader("permissions") String permissions,
+                      @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
+
 }

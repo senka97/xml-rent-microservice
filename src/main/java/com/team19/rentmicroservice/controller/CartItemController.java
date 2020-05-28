@@ -34,7 +34,7 @@ public class CartItemController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
         //proveri se da li takav oglas postoji u ad-service i vrati se id vlasnika oglasa
-        Long owner = adClient.getAd(cartItemRequestDTO.getAdID(),cp.getPermissions(),cp.getUserID(),cp.getToken());
+        Long owner = adClient.getAdOwner(cartItemRequestDTO.getAdID(),cp.getPermissions(),cp.getUserID(),cp.getToken());
         if(owner == null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("This ad doesn't exist.");
         }

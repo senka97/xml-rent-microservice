@@ -1,40 +1,29 @@
-package com.team19.rentmicroservice.model;
+package com.team19.rentmicroservice.dto;
 
-import javax.persistence.*;
 import java.time.LocalDate;
 
-@Entity
-public class Reservation {
-    //rezervacija za oglas kada se fizicki rentira
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ReservationDTO {
+
     private Long id;
 
-    @Column(name="startDate")
     private LocalDate startDate;
 
-    @Column(name="endDate")
     private LocalDate endDate;
 
-    @Column(name="currentPricePerKm")
-    private double currentPricePerKm;
-
-    @Column(name="clientFirstName")
     private String clientFirstName;
 
-    @Column(name="clientLastName")
     private String clientLastName;
 
-    @Column(name="clientEmail")
     private String clientEmail;
 
-    @Column(name="clientPhoneNumber")
     private String clientPhoneNumber;
 
-    @Column(name="adID")
-    private Long adID;
+    private double currentPricePerKm;
 
-    public Reservation(){
+    private Long adId;
+
+    public ReservationDTO()
+    {
 
     }
 
@@ -60,22 +49,6 @@ public class Reservation {
 
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
-    }
-
-    public double getCurrentPricePerKm() {
-        return currentPricePerKm;
-    }
-
-    public void setCurrentPricePerKm(double currentPricePerKm) {
-        this.currentPricePerKm = currentPricePerKm;
-    }
-
-    public Long getAdID() {
-        return adID;
-    }
-
-    public void setAdID(Long adID) {
-        this.adID = adID;
     }
 
     public String getClientFirstName() {
@@ -108,5 +81,21 @@ public class Reservation {
 
     public void setClientPhoneNumber(String clientPhoneNumber) {
         this.clientPhoneNumber = clientPhoneNumber;
+    }
+
+    public Long getAdId() {
+        return adId;
+    }
+
+    public void setAdId(Long adId) {
+        this.adId = adId;
+    }
+
+    public double getCurrentPricePerKm() {
+        return currentPricePerKm;
+    }
+
+    public void setCurrentPricePerKm(double currentPricePerKm) {
+        this.currentPricePerKm = currentPricePerKm;
     }
 }
