@@ -44,4 +44,22 @@ public class CartServiceImpl implements CartService {
             return cartItemDTOs;
         }
     }
+
+    @Override
+    public String validateCart(ArrayList<Long> cartItemsIDs) {
+        //proverim da li u korpi od ulogovanog
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+        Cart cart = cartRepository.findByClientID(Long.parseLong(cp.getUserID()));
+        if(cart == null){
+            return "This user doesn't have a cart and can't make requests.";
+        }
+
+        for(Long cartItemId: cartItemsIDs){
+            if(!cart.getCartItems().stream().filter(ci -> ci.getId() == cartItemId).findFirst().isPresent()){
+                return "Invalid cart items. This user doesn't have these cart items in his/her cart.";
+            }
+        }
+        return null;
+    }
 }
