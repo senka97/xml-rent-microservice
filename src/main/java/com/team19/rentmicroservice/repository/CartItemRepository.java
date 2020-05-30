@@ -14,4 +14,6 @@ public interface CartItemRepository extends JpaRepository<CartItem,Long> {
 
     @Query(value="FROM CartItem WHERE id IN ?1")
     List<CartItem> findCartItems(List<Long> cartItemsIDs);
+
+    List<CartItem> findByCartAndInCart(Cart cart, boolean inCart);
 }

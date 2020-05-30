@@ -2,6 +2,7 @@ package com.team19.rentmicroservice.service;
 
 import com.team19.rentmicroservice.dto.CartItemDTO;
 import com.team19.rentmicroservice.model.Cart;
+import org.springframework.http.ResponseEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,6 @@ import java.util.List;
 public interface CartService {
 
       List<CartItemDTO> getCart();
-      String validateCart(ArrayList<Long> cartItemsIDs);
+      ResponseEntity<?> validateCart(ArrayList<Long> cartItemsIDs);
 
 }

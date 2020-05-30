@@ -37,6 +37,11 @@ public class CartItemController {
         Long owner = adClient.getAdOwner(cartItemRequestDTO.getAdID(),cp.getPermissions(),cp.getUserID(),cp.getToken());
         if(owner == null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("This ad doesn't exist.");
+        }else{
+            //ako oglas postoji proveri se da li je klijent isti kao i vlasnik oglasa
+            if(owner == Long.parseLong(cp.getUserID())){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can't add your own ad in your cart.");
+            }
         }
         CartItemResponseDTO cartItemResponseDTO = cartItemService.addCartItem(cartItemRequestDTO, owner);
         if(cartItemResponseDTO == null){
