@@ -34,6 +34,9 @@ public class Reservation {
     @Column(name="adID")
     private Long adID;
 
+    @Column(name="ownerID")
+    private Long ownerID;
+
     public Reservation(){
 
     }
@@ -108,5 +111,13 @@ public class Reservation {
 
     public void setClientPhoneNumber(String clientPhoneNumber) {
         this.clientPhoneNumber = clientPhoneNumber;
+    }
+
+    public Long getOwnerID() {
+        return ownerID;
+    }
+
+    public void setOwnerID(Long ownerID) {
+        this.ownerID = ownerID;
     }
 }

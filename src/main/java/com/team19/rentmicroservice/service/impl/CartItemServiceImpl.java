@@ -14,6 +14,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CartItemServiceImpl implements CartItemService {
 
@@ -61,14 +63,19 @@ public class CartItemServiceImpl implements CartItemService {
             cartRepository.save(newCart);
             cart = cartRepository.findByClientID(Long.parseLong(cp.getUserID()));
         }
-        //proverim da li postoji takav cartItem vec u cart-u
+        //proverim da li postoji bas isti takav cartItem vec u cart-u od ulogovanog korisnika
         CartItem cartItem = cartItemRepository.findByAdIDAndStartDateAndEndDateAndCart(cartItemRequestDTO.getAdID(),
                 cartItemRequestDTO.getStartDate(),cartItemRequestDTO.getEndDate(),cart);
-        //ako ne postoji napravim novi
+        //ako ne postoji bas isti, proverim da li postoji cartItem sa tim oglasom koji se poklapa sa ovim terminom
         if(cartItem == null) {
+            List<CartItem> inCart = this.cartItemRepository.findCartItemsForAd(Long.parseLong(cp.getUserID()),cartItemRequestDTO.getAdID(),cartItemRequestDTO.getStartDate(),cartItemRequestDTO.getEndDate());
+            if(inCart.size() != 0){
+                return null; //ako postoji vratim null
+            }
+            //ako ne postoji napravim novi
             cartItem = new CartItem(cartItemRequestDTO.getAdID(), cartItemRequestDTO.getStartDate(), cartItemRequestDTO.getEndDate(), ownerID);
             cartItem.setCart(cart);
-        }else{ //ako fizicki postoji u korpi
+        }else{ //ako fizicki postoji bas isti u korpi
             if(cartItem.isInCart()){ //proverim da li je i logicki u korpi
                 return null; //ako je vec u korpi vratim null
             }

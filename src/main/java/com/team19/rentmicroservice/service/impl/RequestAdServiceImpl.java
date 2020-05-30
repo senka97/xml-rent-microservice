@@ -8,6 +8,7 @@ import com.team19.rentmicroservice.service.RequestAdService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -17,9 +18,9 @@ public class RequestAdServiceImpl implements RequestAdService {
     private RequestAdRepository requestAdRepository;
 
     @Override
-    public boolean checkIfAdReserved(CartItem cartItem) {
+    public boolean checkIfAdReserved(Long adID, LocalDate startDate, LocalDate endDate) {
 
-        List<RequestAd> requestAds = this.requestAdRepository.findRequests(cartItem.getAdID(),cartItem.getStartDate(),cartItem.getEndDate());
+        List<RequestAd> requestAds = this.requestAdRepository.findRequests(adID,startDate,endDate);
         if(requestAds.size() == 0){
             return false;
         }else{
