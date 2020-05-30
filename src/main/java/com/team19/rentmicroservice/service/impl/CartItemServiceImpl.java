@@ -41,9 +41,11 @@ public class CartItemServiceImpl implements CartItemService {
                 valid = false;
             }
         }
+
         if(!valid){
             return msg;
         }
+
         return null;
     }
 

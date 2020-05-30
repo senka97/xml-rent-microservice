@@ -30,9 +30,13 @@ public class RequestController {
     @PreAuthorize("hasAuthority('request_insert')")
     public ResponseEntity<?> createRequests(@RequestBody RentRequestDTO rentRequestDTO){
 
-         String msg = this.cartService.validateCart(rentRequestDTO.getCartItemsIDs());
+         /*String msg = this.cartService.validateCart(rentRequestDTO.getCartItemsIDs());
          if(msg != null){
              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(msg);
+         }*/
+         ResponseEntity<?> response =  this.cartService.validateCart(rentRequestDTO.getCartItemsIDs());
+         if(response != null){
+             return  response;
          }
         List<RequestCreatedDTO> requestCreatedDTOs = this.requestService.createRequests(rentRequestDTO);
          return new ResponseEntity(requestCreatedDTOs, HttpStatus.CREATED);

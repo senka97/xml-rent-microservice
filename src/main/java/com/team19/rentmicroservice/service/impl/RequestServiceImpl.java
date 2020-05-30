@@ -75,6 +75,7 @@ public class RequestServiceImpl implements RequestService {
                 HashSet<RequestAd>  requestAds1 = new HashSet<>();
                 requestAds1.add(requestAd);
                 Request request = new Request(requestAds1,requestAd.getOwnerID(),requestAd.getClientID());
+                requestAd.setRequest(request); //MORAM POSTAVITI NA OBE STRANE
                 request = requestRepository.save(request);
                 requestCreatedDTOs.add(new RequestCreatedDTO(request));
             }
@@ -85,9 +86,11 @@ public class RequestServiceImpl implements RequestService {
                     Request req = requests.stream().filter(r -> r.getOwnerID() == requestAd.getOwnerID()).findFirst().orElse(null);
                     if(req != null){ //ako postoji trenutni zahtev ubacim u njega
                         req.getRequestAds().add(requestAd);
+                        requestAd.setRequest(req); //MORAM POSTAVITI NA OBE STRANE
                     }else{ //ako ne postoji napravi novi zahtev
                         req = new Request(requestAd.getOwnerID(),requestAd.getClientID());
                         req.getRequestAds().add(requestAd);
+                        requestAd.setRequest(req); //MORAM POSTAVITI NA OBE STRANE
                         requests.add(req);
                     }
                 }
