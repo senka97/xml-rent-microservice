@@ -3,6 +3,9 @@ package com.team19.rentmicroservice.service.impl;
 import com.team19.rentmicroservice.client.AdClient;
 import com.team19.rentmicroservice.dto.AdDTOSimple;
 import com.team19.rentmicroservice.dto.ReservationDTO;
+import com.team19.rentmicroservice.enums.RequestStatus;
+import com.team19.rentmicroservice.model.CartItem;
+import com.team19.rentmicroservice.model.Request;
 import com.team19.rentmicroservice.model.Reservation;
 import com.team19.rentmicroservice.repository.ReservationRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
@@ -12,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -22,9 +27,13 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Autowired
     private AdClient adClient;
+    @Autowired
+    private RequestAdServiceImpl requestAdService;
+    @Autowired
+    private RequestServiceImpl requestService;
 
     @Override
-    public Reservation createNewReservation(ReservationDTO reservation) {
+    public Reservation createNewReservation(ReservationDTO reservation, Long ownerID) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
@@ -64,6 +73,12 @@ public class ReservationServiceImpl implements ReservationService {
 
             }
 
+            //proveri se da li postoje zahtevi koji se preklapaju sa novom rezervacijom
+            if(requestAdService.checkIfAdReserved(reservation.getAdId(),reservation.getStartDate(),reservation.getEndDate())){
+                return null;
+            }
+
+
             Reservation newReservation = new Reservation();
 
             newReservation.setClientFirstName(reservation.getClientFirstName());
@@ -74,9 +89,21 @@ public class ReservationServiceImpl implements ReservationService {
             newReservation.setStartDate(reservation.getStartDate());
             newReservation.setEndDate(reservation.getEndDate());
             newReservation.setAdID(ad.getId());
+            newReservation.setOwnerID(ownerID);
 
-            return reservationRepository.save(newReservation);
+            newReservation = reservationRepository.save(newReservation);
 
+            //automatski se odbiju svi zahtevi koji su Pending i koji se poklapaju sa ovim terminom
+            List<Request> requests = requestService.findPendingRequests(reservation.getAdId(),reservation.getStartDate(),reservation.getEndDate());
+            if(requests.size() != 0) {
+                for (Request r : requests) {
+                    r.setStatus(RequestStatus.Canceled);
+                    //mozda ovde poslati mejlove da im je odbijen zahtev
+                }
+                requestService.saveAll(requests);
+            }
+
+            return newReservation;
         }
         return null;
     }
@@ -84,5 +111,16 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Set<Reservation> findReservationsForThisAd(Long adId) {
         return reservationRepository.findReservationsForThisAd(adId);
+    }
+
+    @Override
+    public boolean checkIfAdReserved(Long adID, LocalDate startDate, LocalDate endDate) {
+
+        List<Reservation> reservations = this.reservationRepository.findReservations(adID,startDate,endDate);
+        if(reservations.size() == 0){
+            return false;
+        }else {
+            return true;
+        }
     }
 }

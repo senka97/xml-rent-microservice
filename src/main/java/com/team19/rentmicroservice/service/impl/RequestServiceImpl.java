@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -56,7 +57,7 @@ public class RequestServiceImpl implements RequestService {
             PriceListAdDTO pl = priceListAdDTOs.stream().filter(p -> p.getAdID() == requestAd.getAdID()).findFirst().orElse(null);
             requestAd.setCurrentPricePerKm(pl.getPricePerKm());
             double payment = 0;
-            long days = ChronoUnit.DAYS.between(requestAd.getStartDate(),requestAd.getEndDate());
+            long days = ChronoUnit.DAYS.between(requestAd.getStartDate(),requestAd.getEndDate()) + 1; //plus 1 da bi kad rezervise na jedan dan, cena bila za 1 dan
             if(days<20){
                 payment = days*pl.getPricePerDay();
             }else if(days>=20 && days<30){
@@ -108,5 +109,16 @@ public class RequestServiceImpl implements RequestService {
         cartItemRepository.saveAll(cartItems);
 
         return requestCreatedDTOs;
+    }
+
+    @Override
+    public List<Request> findPendingRequests(Long adID, LocalDate startDate, LocalDate endDate) {
+
+        return this.requestRepository.findPendingRequests(adID,startDate,endDate);
+    }
+
+    @Override
+    public List<Request> saveAll(List<Request> requests) {
+        return requestRepository.saveAll(requests);
     }
 }

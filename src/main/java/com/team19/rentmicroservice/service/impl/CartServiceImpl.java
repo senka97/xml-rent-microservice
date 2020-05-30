@@ -31,6 +31,8 @@ public class CartServiceImpl implements CartService {
     private RequestAdServiceImpl requestAdService;
     @Autowired
     private CartItemRepository cartItemRepository;
+    @Autowired
+    private ReservationServiceImpl reservationService;
 
 
     @Override
@@ -73,10 +75,11 @@ public class CartServiceImpl implements CartService {
         }
 
         //proverim da li su se ti oglasi u medjuvremenu zauzeli, pa da se ne pravi zahtev ako jesu
+        //proverim da li je taj oglas zauzet u zahtevima ili u rezervacijama
         boolean exist = false;
         List<CartItem> inCart = this.cartItemRepository.findByCartAndInCart(cart,true);
         for(CartItem ci: inCart){
-               if(this.requestAdService.checkIfAdReserved(ci)){
+               if(this.requestAdService.checkIfAdReserved(ci.getAdID(),ci.getStartDate(),ci.getEndDate()) || this.reservationService.checkIfAdReserved(ci.getAdID(),ci.getStartDate(),ci.getEndDate())){
                    ci.setInCart(false);
                    exist = true;
                }
