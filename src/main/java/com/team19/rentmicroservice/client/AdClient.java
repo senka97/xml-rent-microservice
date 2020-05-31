@@ -1,10 +1,8 @@
 package com.team19.rentmicroservice.client;
 
-import com.team19.rentmicroservice.dto.CartItemDTO;
-import com.team19.rentmicroservice.dto.PriceListAdDTO;
+import com.team19.rentmicroservice.dto.*;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import com.team19.rentmicroservice.dto.AdDTOSimple;
 
 
 import java.util.List;
@@ -27,5 +25,9 @@ public interface AdClient {
     @PostMapping("api/priceList/ads")
     List<PriceListAdDTO> findPrices(@RequestBody List<PriceListAdDTO> priceListAdDTOs, @RequestHeader("permissions") String permissions,
                                     @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
+
+    @PostMapping("api/ads/fill")
+    List<AdFrontDTO> fillAdsWithInformation(@RequestBody List<Long> adIDs, @RequestHeader("permissions") String permissions,
+                                            @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
 
 }

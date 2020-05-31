@@ -2,6 +2,7 @@ package com.team19.rentmicroservice.controller;
 
 import com.team19.rentmicroservice.dto.RentRequestDTO;
 import com.team19.rentmicroservice.dto.RequestCreatedDTO;
+import com.team19.rentmicroservice.dto.RequestFrontDTO;
 import com.team19.rentmicroservice.enums.RequestStatus;
 import com.team19.rentmicroservice.model.Request;
 import com.team19.rentmicroservice.security.CustomPrincipal;
@@ -29,13 +30,9 @@ public class RequestController {
     private CartServiceImpl cartService;
 
     @PostMapping(consumes = "application/json")
-    @PreAuthorize("hasAuthority('request_insert')")
+    @PreAuthorize("hasAuthority('request_create')")
     public ResponseEntity<?> createRequests(@RequestBody RentRequestDTO rentRequestDTO){
 
-         /*String msg = this.cartService.validateCart(rentRequestDTO.getCartItemsIDs());
-         if(msg != null){
-             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(msg);
-         }*/
          ResponseEntity<?> response =  this.cartService.validateCart(rentRequestDTO.getCartItemsIDs());
          if(response != null){
              return  response;
@@ -46,7 +43,7 @@ public class RequestController {
 
 
     @PutMapping(value="/accept/{id}")
-    //@PreAuthorize("hasAuthority('request_update')")
+    @PreAuthorize("hasAuthority('request_update')")
     public ResponseEntity<?> acceptRequest(@PathVariable("id") Long id){
 
         Request request = this.requestService.findOne(id);
@@ -75,7 +72,7 @@ public class RequestController {
     }
 
     @PutMapping(value="/reject/{id}")
-    //@PreAuthorize("hasAuthority('request_update')")
+    @PreAuthorize("hasAuthority('request_update')")
     public ResponseEntity<?> rejectRequest(@PathVariable("id") Long id){
 
         Request request = this.requestService.findOne(id);
@@ -98,7 +95,7 @@ public class RequestController {
         }
     }
     @PutMapping(value="/cancel/{id}")
-    //@PreAuthorize("hasAuthority('request_update_cancel')")
+    @PreAuthorize("hasAuthority('request_update_cancel')")
     public ResponseEntity<?> cancelRequest(@PathVariable("id") Long id){
 
         Request request = this.requestService.findOne(id);
@@ -119,5 +116,21 @@ public class RequestController {
                 }
             }
         }
+    }
+
+    @GetMapping(value="/pending")
+    @PreAuthorize("hasAuthority('request_read')")
+    public ResponseEntity<?> getPendingRequestsFront(){
+
+        List<RequestFrontDTO> requestFrontDTOs = this.requestService.getPendingRequestsFront();
+        return new ResponseEntity(requestFrontDTOs,HttpStatus.OK);
+    }
+
+    @GetMapping(value="/pending/number")
+    @PreAuthorize("hasAuthority('request_read')")
+    public ResponseEntity<?> getPendingRequestsNumber(){
+
+        int num = this.requestService.getPendingRequestsNumber();
+        return new ResponseEntity(num,HttpStatus.OK);
     }
 }
