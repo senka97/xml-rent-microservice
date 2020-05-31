@@ -1,9 +1,8 @@
 package com.team19.rentmicroservice.service.impl;
 
 import com.team19.rentmicroservice.client.AdClient;
-import com.team19.rentmicroservice.dto.PriceListAdDTO;
-import com.team19.rentmicroservice.dto.RentRequestDTO;
-import com.team19.rentmicroservice.dto.RequestCreatedDTO;
+import com.team19.rentmicroservice.client.UserClient;
+import com.team19.rentmicroservice.dto.*;
 import com.team19.rentmicroservice.enums.RequestStatus;
 import com.team19.rentmicroservice.model.CartItem;
 import com.team19.rentmicroservice.model.Request;
@@ -35,6 +34,12 @@ public class RequestServiceImpl implements RequestService {
     private AdClient adClient;
     @Autowired
     private RequestAdRepository requestAdRepository;
+    @Autowired
+    private ReservationServiceImpl reservationService;
+    @Autowired
+    private RequestAdServiceImpl requestAdService;
+    @Autowired
+    private UserClient userClient;
 
 
     @Override
@@ -137,8 +142,7 @@ public class RequestServiceImpl implements RequestService {
         for(RequestAd ra: request.getRequestAds()){
             //za svaki oglas u zahtevu proverim jos jednom da li se on mozda zauzeo u tom periodu
             //ako jeste odbijem zahtev
-            List<RequestAd> requestAds = requestAdRepository.findRequests(ra.getAdID(),ra.getStartDate(),ra.getEndDate());
-            if(requestAds.size() != 0){
+            if(this.requestAdService.checkIfAdReserved(ra.getAdID(),ra.getStartDate(),ra.getEndDate()) || this.reservationService.checkIfAdReserved(ra.getAdID(),ra.getStartDate(),ra.getEndDate())){
                 request.setStatus(RequestStatus.Canceled);
                 requestRepository.save(request);
                 return "An ad in this request has been already reserved for the desired period, so this request will be rejected.";
@@ -177,6 +181,61 @@ public class RequestServiceImpl implements RequestService {
 
         request.setStatus(RequestStatus.Canceled);
         requestRepository.save(request);
+    }
+
+    @Override
+    public List<RequestFrontDTO> getPendingRequestsFront() {
+        //ulogovani korisnik koji trazi zahteve za svoje oglase
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
+        List<RequestFrontDTO> requestFrontDTOs = new ArrayList<>();
+        List<Request> pendingRequests = this.requestRepository.findAllPendingRequestsForOwner(Long.parseLong(cp.getUserID()));
+        if(pendingRequests.size() == 0){
+            return requestFrontDTOs;
+        }
+        List<ClientFrontDTO> clientFrontDTOs = new ArrayList<>(); //ovo su podaci koje moram da uzmem iz user-microservice
+        List<Long> adIDs = new ArrayList<>(); //ovo su id od oglasa cije podatke moram da uzmem iz ad-microservice
+        for(Request r: pendingRequests){
+            requestFrontDTOs.add(new RequestFrontDTO(r));
+            if(!clientFrontDTOs.stream().filter(c -> c.getId() == r.getClientID()).findFirst().isPresent()){
+                clientFrontDTOs.add(new ClientFrontDTO(r.getClientID()));
+            }
+            for(RequestAd ra: r.getRequestAds()){
+                if(!adIDs.contains(ra.getAdID())){
+                    adIDs.add(ra.getAdID());
+                }
+            }
+        }
+        //popunila sam informacijama za zahtev i napravila listu klijenata i oglasa cije informacije moram da dobavim
+        clientFrontDTOs = userClient.fillClients(clientFrontDTOs, cp.getToken());
+        //popunim informacijama o klijentima
+        for(RequestFrontDTO r: requestFrontDTOs){
+             ClientFrontDTO client = clientFrontDTOs.stream().filter(c -> c.getId() == r.getClientID()).findFirst().orElse(null);
+             r.setClientLastName(client.getSurname());
+             r.setClientName(client.getName());
+        }
+        //kad sam popunila podacima o klijentu, saljem u ad-microservice da se popune podaci o oglasu
+        List<AdFrontDTO> adFrontDTOs = adClient.fillAdsWithInformation(adIDs,cp.getPermissions(),cp.getUserID(),cp.getToken());
+
+        //popunim podacima o oglasu
+        for(RequestFrontDTO r: requestFrontDTOs){
+            for(RequestAdFrontDTO ra: r.getRequestAds()){
+                AdFrontDTO ad = adFrontDTOs.stream().filter(a -> a.getId() == ra.getAd().getId()).findFirst().orElse(null);
+                ra.setAd(ad);
+            }
+        }
+
+        return requestFrontDTOs;
+    }
+
+    @Override
+    public int getPendingRequestsNumber() {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+        List<Request> pendingRequests = this.requestRepository.findAllPendingRequestsForOwner(Long.parseLong(cp.getUserID()));
+        return pendingRequests.size();
     }
 
 }
