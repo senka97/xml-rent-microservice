@@ -4,10 +4,12 @@ import com.team19.rentmicroservice.client.AdClient;
 import com.team19.rentmicroservice.dto.PriceListAdDTO;
 import com.team19.rentmicroservice.dto.RentRequestDTO;
 import com.team19.rentmicroservice.dto.RequestCreatedDTO;
+import com.team19.rentmicroservice.enums.RequestStatus;
 import com.team19.rentmicroservice.model.CartItem;
 import com.team19.rentmicroservice.model.Request;
 import com.team19.rentmicroservice.model.RequestAd;
 import com.team19.rentmicroservice.repository.CartItemRepository;
+import com.team19.rentmicroservice.repository.RequestAdRepository;
 import com.team19.rentmicroservice.repository.RequestRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
 import com.team19.rentmicroservice.service.RequestService;
@@ -31,6 +33,8 @@ public class RequestServiceImpl implements RequestService {
     private CartItemRepository cartItemRepository;
     @Autowired
     private AdClient adClient;
+    @Autowired
+    private RequestAdRepository requestAdRepository;
 
 
     @Override
@@ -121,4 +125,58 @@ public class RequestServiceImpl implements RequestService {
     public List<Request> saveAll(List<Request> requests) {
         return requestRepository.saveAll(requests);
     }
+
+    @Override
+    public Request findOne(Long id) {
+        return requestRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public String acceptRequest(Request request) {
+
+        for(RequestAd ra: request.getRequestAds()){
+            //za svaki oglas u zahtevu proverim jos jednom da li se on mozda zauzeo u tom periodu
+            //ako jeste odbijem zahtev
+            List<RequestAd> requestAds = requestAdRepository.findRequests(ra.getAdID(),ra.getStartDate(),ra.getEndDate());
+            if(requestAds.size() != 0){
+                request.setStatus(RequestStatus.Canceled);
+                requestRepository.save(request);
+                return "An ad in this request has been already reserved for the desired period, so this request will be rejected.";
+            }
+        }
+        //ako je doslo dovde znaci da su i dalje svi oglasi slobodni u zeljenom periodu
+        //automatski se odbijaju svi postojeci zahtevi u statusu pending koji se poklapaju sa
+        //terminima oglasa u zahtevu koji se odobrava
+        for(RequestAd ra: request.getRequestAds()){
+            List<Request> requests = requestRepository.findPendingRequests(ra.getAdID(),ra.getStartDate(),ra.getEndDate());
+            //sve pronadjene odbijam
+            if(requests.size()!=0) {
+                for (Request r : requests) {
+                    r.setStatus(RequestStatus.Canceled);
+                }
+                requestRepository.saveAll(requests);
+                //ovde bi trebalo poslati mejl da su zahtevi odbijeni
+            }
+        }
+        //posle svega ovoga zahtev se odobri i prelazi odmah u paid
+        request.setStatus(RequestStatus.Paid);
+        requestRepository.save(request);
+        return null;
+    }
+
+    @Override
+    public void rejectRequest(Request request) {
+
+        request.setStatus(RequestStatus.Canceled);
+        requestRepository.save(request);
+        //poslati mejl za odbijanje
+    }
+
+    @Override
+    public void cancelRequest(Request request) {
+
+        request.setStatus(RequestStatus.Canceled);
+        requestRepository.save(request);
+    }
+
 }

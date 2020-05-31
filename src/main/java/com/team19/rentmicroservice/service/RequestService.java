@@ -12,4 +12,8 @@ public interface RequestService {
       List<RequestCreatedDTO> createRequests(RentRequestDTO rentRequestDTO);
       List<Request> findPendingRequests(Long adID, LocalDate startDate, LocalDate endDate);
       List<Request> saveAll(List<Request> requests);
+      Request findOne(Long id);
+      String acceptRequest(Request request);
+      void rejectRequest(Request request);
+      void cancelRequest(Request request);
 }
