@@ -149,6 +149,11 @@ public class RequestServiceImpl implements RequestService {
             }
         }
         //ako je doslo dovde znaci da su i dalje svi oglasi slobodni u zeljenom periodu
+
+        //zahtev se odobri i prelazi odmah u paid
+        request.setStatus(RequestStatus.Paid);
+        requestRepository.save(request);
+
         //automatski se odbijaju svi postojeci zahtevi u statusu pending koji se poklapaju sa
         //terminima oglasa u zahtevu koji se odobrava
         for(RequestAd ra: request.getRequestAds()){
@@ -162,9 +167,7 @@ public class RequestServiceImpl implements RequestService {
                 //ovde bi trebalo poslati mejl da su zahtevi odbijeni
             }
         }
-        //posle svega ovoga zahtev se odobri i prelazi odmah u paid
-        request.setStatus(RequestStatus.Paid);
-        requestRepository.save(request);
+
         return null;
     }
 
