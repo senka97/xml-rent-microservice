@@ -1,6 +1,7 @@
 package com.team19.rentmicroservice.controller;
 
 import com.team19.rentmicroservice.client.AdClient;
+import com.team19.rentmicroservice.dto.AdOwnerDTO;
 import com.team19.rentmicroservice.dto.ReservationDTO;
 import com.team19.rentmicroservice.model.Reservation;
 import com.team19.rentmicroservice.security.CustomPrincipal;
@@ -40,16 +41,16 @@ public class ReservationController {
         //dobavi se id vlasnika oglasa i proveri se da li je to oglas od trenutno ulogovanog
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
-        Long ownerID = adClient.getAdOwner(reservationDTO.getAdId(), cp.getPermissions(),cp.getUserID(),cp.getToken());
-        if(ownerID == null){
+        AdOwnerDTO adOwnerDTO = adClient.getAdOwner(reservationDTO.getAdId(), cp.getPermissions(),cp.getUserID(),cp.getToken());
+        if(adOwnerDTO == null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("This ad doesn't exist.");
         }else{
-            if(ownerID != Long.parseLong(cp.getUserID())){
+            if(adOwnerDTO.getOwnerID() != Long.parseLong(cp.getUserID())){
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can't make a reservation for an ad that is not yours.");
             }
         }
 
-        Reservation r = reservationService.createNewReservation(reservationDTO, ownerID);
+        Reservation r = reservationService.createNewReservation(reservationDTO, adOwnerDTO.getOwnerID());
 
         if(r == null)
         {

@@ -11,7 +11,7 @@ import java.util.List;
 public interface AdClient {
 
     @GetMapping("api/ads/{id}/owner")
-    Long getAdOwner(@PathVariable("id") Long id, @RequestHeader("permissions") String permissions,
+    AdOwnerDTO getAdOwner(@PathVariable("id") Long id, @RequestHeader("permissions") String permissions,
                @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
 
     @PostMapping("api/ads/cartItems")
