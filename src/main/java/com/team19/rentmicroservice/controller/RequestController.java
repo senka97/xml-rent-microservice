@@ -133,4 +133,11 @@ public class RequestController {
         int num = this.requestService.getPendingRequestsNumber();
         return new ResponseEntity(num,HttpStatus.OK);
     }
+
+    @PutMapping(value = "/reject/client/{id}")
+    @PreAuthorize("hasAuthority('request_reject_update')")
+    public ResponseEntity<?> rejectAllPendingRequestsForBlockedOrRemovedClient(@PathVariable Long id) {
+        requestService.rejectAllPendingRequestsForBlockedOrRemovedClient(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

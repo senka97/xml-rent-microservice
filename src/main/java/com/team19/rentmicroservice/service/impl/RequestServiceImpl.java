@@ -241,4 +241,16 @@ public class RequestServiceImpl implements RequestService {
         return pendingRequests.size();
     }
 
+    @Override
+    public void rejectAllPendingRequestsForBlockedOrRemovedClient(Long id) {
+        List<Request> pendingRequests = requestRepository.findAllPendingRequestsForOwner(id);
+
+        if (!pendingRequests.isEmpty()) {
+            for (Request r : pendingRequests) {
+                r.setStatus(RequestStatus.Canceled);
+                requestRepository.save(r);
+            }
+        }
+    }
+
 }
