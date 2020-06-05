@@ -243,10 +243,20 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public void rejectAllPendingRequestsForBlockedOrRemovedClient(Long id) {
-        List<Request> pendingRequests = requestRepository.findAllPendingRequestsForOwner(id);
+        //odbijaju se svi zahtevi koju su pending ako je obrisan ili blokiran vlasnik oglasa
+        List<Request> pendingRequestsForOwner = requestRepository.findAllPendingRequestsForOwner(id);
 
-        if (!pendingRequests.isEmpty()) {
-            for (Request r : pendingRequests) {
+        if (!pendingRequestsForOwner.isEmpty()) {
+            for (Request r : pendingRequestsForOwner) {
+                r.setStatus(RequestStatus.Canceled);
+                requestRepository.save(r);
+            }
+        }
+
+        //odbijaju se svi zahtevi koju su pending ako je obrisan ili blokiran korisnik koji je iznajmio oglas
+        List<Request> pendingRequestForClient = requestRepository.findAllPendingRequestsForClient(id);
+        if (!pendingRequestForClient.isEmpty()) {
+            for (Request r : pendingRequestForClient) {
                 r.setStatus(RequestStatus.Canceled);
                 requestRepository.save(r);
             }
