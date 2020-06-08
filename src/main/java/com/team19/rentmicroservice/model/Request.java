@@ -3,6 +3,7 @@ package com.team19.rentmicroservice.model;
 import com.team19.rentmicroservice.enums.RequestStatus;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,6 +24,8 @@ public class Request {
     private Long ownerID; //ko je vlasnik oglasa
     @Column(name="clientID")
     private Long clientID; //ko je iznajmio oglas/e
+    @Column(name="creationTime")
+    private LocalDateTime creationTime;
 
     public Request(){
 
@@ -34,6 +37,7 @@ public class Request {
         this.messages = new HashSet<>();
         this.ownerID = ownerID;
         this.clientID= clientID;
+        this.creationTime = LocalDateTime.now();
     }
 
     public Request(Long ownerID, Long clientID){
@@ -42,6 +46,8 @@ public class Request {
         this.messages = new HashSet<>();
         this.ownerID = ownerID;
         this.clientID= clientID;
+        this.creationTime = LocalDateTime.now();
+
     }
 
     public Long getId() {
@@ -90,5 +96,13 @@ public class Request {
 
     public void setClientID(Long clientID) {
         this.clientID = clientID;
+    }
+
+    public LocalDateTime getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(LocalDateTime creationTime) {
+        this.creationTime = creationTime;
     }
 }
