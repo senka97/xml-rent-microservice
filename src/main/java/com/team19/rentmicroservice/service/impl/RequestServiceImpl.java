@@ -156,6 +156,14 @@ public class RequestServiceImpl implements RequestService {
         request.setStatus(RequestStatus.Paid);
         requestRepository.save(request);
 
+        // omogucavanje postavljanja komentara za svaki zahtev
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+        for(RequestAd ra: request.getRequestAds())
+        {
+            this.adClient.createUserCanPostComment(ra.getAdID(), ra.getClientID(), ra.getEndDate().toString() ,cp.getPermissions(),cp.getUserID(),cp.getToken());
+        }
+
         //automatski se odbijaju svi postojeci zahtevi u statusu pending koji se poklapaju sa
         //terminima oglasa u zahtevu koji se odobrava
         for(RequestAd ra: request.getRequestAds()){

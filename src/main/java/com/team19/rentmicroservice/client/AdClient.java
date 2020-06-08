@@ -30,4 +30,9 @@ public interface AdClient {
     List<AdFrontDTO> fillAdsWithInformation(@RequestBody List<Long> adIDs, @RequestHeader("permissions") String permissions,
                                             @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
 
+    @PostMapping(value = "api/userCanPostComment/{adId}/{uId}/{endDate}")
+    Boolean createUserCanPostComment(@PathVariable("adId") Long adId, @PathVariable("uId") Long uId, @PathVariable("endDate") String endDate, @RequestHeader("permissions") String permissions,
+                                     @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
+
+
 }
