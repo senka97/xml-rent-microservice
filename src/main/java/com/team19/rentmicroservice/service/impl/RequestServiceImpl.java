@@ -13,11 +13,13 @@ import com.team19.rentmicroservice.repository.RequestRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
 import com.team19.rentmicroservice.service.RequestService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -261,6 +263,22 @@ public class RequestServiceImpl implements RequestService {
                 requestRepository.save(r);
             }
         }
+    }
+
+    @Override
+    @Scheduled(cron = "${requests.cron}")
+    public void rejectPendingRequestsAfter24() {
+
+           System.out.println("Odbijanje zahteva");
+           List<Request> requests = this.requestRepository.findPendingRequestsAfter24(LocalDateTime.now().minusDays(1));
+           System.out.println("Broj zahteva koje treba odbiti: " + requests.size());
+           if(requests.size()>0){
+               for(Request r: requests){
+                   r.setStatus(RequestStatus.Canceled);
+                   //posaljem mejl da je odbijen zahtev
+               }
+               this.requestRepository.saveAll(requests);
+           }
     }
 
 }

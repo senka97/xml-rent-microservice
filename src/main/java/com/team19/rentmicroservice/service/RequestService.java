@@ -20,4 +20,5 @@ public interface RequestService {
       List<RequestFrontDTO> getPendingRequestsFront();
       int getPendingRequestsNumber();
       void rejectAllPendingRequestsForBlockedOrRemovedClient(Long id);
+      void rejectPendingRequestsAfter24();
 }
