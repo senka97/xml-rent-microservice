@@ -6,6 +6,8 @@ import com.team19.rentmicroservice.dto.CartItemRequestDTO;
 import com.team19.rentmicroservice.dto.CartItemResponseDTO;
 import com.team19.rentmicroservice.security.CustomPrincipal;
 import com.team19.rentmicroservice.service.impl.CartItemServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,9 +28,17 @@ public class CartItemController {
     @Autowired
     private AdClient adClient;
 
+    Logger logger = LoggerFactory.getLogger(CartItemController.class);
+
     @PostMapping(consumes = "application/json")
     @PreAuthorize("hasAuthority('cartItem_insert')")
     public ResponseEntity<?> addCartItem(@RequestBody CartItemRequestDTO cartItemRequestDTO){
+
+        //logger.debug("Start adding a new cart item.");
+        //logger.info("Adding a new cart item...");
+        //logger.error("Error occured.");
+        //logger.warn("Warn");
+        //logger.trace("End adding a new cart item.");
 
         String msg = cartItemService.validateCartItemRequest(cartItemRequestDTO);
         if(msg != null){
