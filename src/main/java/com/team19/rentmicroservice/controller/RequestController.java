@@ -134,7 +134,7 @@ public class RequestController {
         return new ResponseEntity(num,HttpStatus.OK);
     }
 
-    @PutMapping(value = "/reject/client/{id}")
+    @PutMapping(value = "/client/{id}")
     @PreAuthorize("hasAuthority('request_reject_update')")
     public ResponseEntity<?> rejectAllPendingRequestsForBlockedOrRemovedClient(@PathVariable Long id) {
         requestService.rejectAllPendingRequestsForBlockedOrRemovedClient(id);
