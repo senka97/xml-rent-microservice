@@ -47,7 +47,7 @@ public class RentConfiguration extends WebSecurityConfigurerAdapter {
                 .and()
                 .authorizeRequests()
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
-                .antMatchers("/h2-console/**", "/hello")
+                .antMatchers("/h2-console/**", "/hello", "/ws", "/ws/**")
                 .permitAll()
                 .anyRequest().authenticated();
 
