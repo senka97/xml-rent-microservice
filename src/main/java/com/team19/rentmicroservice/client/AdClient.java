@@ -34,5 +34,13 @@ public interface AdClient {
     Boolean createUserCanPostComment(@PathVariable("adId") Long adId, @PathVariable("uId") Long uId, @PathVariable("endDate") String endDate, @RequestHeader("permissions") String permissions,
                                      @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
 
+    @PostMapping(value = "rating/user/{userId}/ad/{adId}/{endDate}")
+    boolean createUserCanRate(@PathVariable("userId") Long userId,
+                              @PathVariable("adId") Long adId,
+                              @PathVariable("endDate") String endDate,
+                              @RequestHeader("permissions") String permissions,
+                              @RequestHeader("userID") String userID,
+                              @RequestHeader("Authorization") String token);
+
 
 }
