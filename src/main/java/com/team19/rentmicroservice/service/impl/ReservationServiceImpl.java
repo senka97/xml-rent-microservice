@@ -1,11 +1,10 @@
 package com.team19.rentmicroservice.service.impl;
 
 import com.team19.rentmicroservice.client.AdClient;
-import com.team19.rentmicroservice.dto.AdDTOSimple;
-import com.team19.rentmicroservice.dto.ReservationDTO;
+import com.team19.rentmicroservice.dto.*;
 import com.team19.rentmicroservice.enums.RequestStatus;
-import com.team19.rentmicroservice.model.CartItem;
 import com.team19.rentmicroservice.model.Request;
+import com.team19.rentmicroservice.model.RequestAd;
 import com.team19.rentmicroservice.model.Reservation;
 import com.team19.rentmicroservice.repository.ReservationRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
@@ -16,6 +15,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -78,7 +79,6 @@ public class ReservationServiceImpl implements ReservationService {
                 return null;
             }
 
-
             Reservation newReservation = new Reservation();
 
             newReservation.setClientFirstName(reservation.getClientFirstName());
@@ -90,6 +90,19 @@ public class ReservationServiceImpl implements ReservationService {
             newReservation.setEndDate(reservation.getEndDate());
             newReservation.setAdID(ad.getId());
             newReservation.setOwnerID(ownerID);
+
+            PriceListAdDTO pl = adClient.getPriceListForAd(reservation.getAdId(),cp.getPermissions(),cp.getUserID(),cp.getToken());
+
+            double payment = 0;
+            long days = ChronoUnit.DAYS.between(reservation.getStartDate(),reservation.getEndDate()) + 1; //plus 1 da bi kad rezervise na jedan dan, cena bila za 1 dan
+            if(days<20){
+                payment = days*pl.getPricePerDay();
+            }else if(days>=20 && days<30){
+                payment = days*pl.getPricePerDay() - (pl.getDiscount20Days()/100)*(days*pl.getPricePerDay());
+            }else{
+                payment = days*pl.getPricePerDay() - (pl.getDiscount30Days()/100)*(days*pl.getPricePerDay());
+            }
+            newReservation.setPayment(payment);
 
             newReservation = reservationRepository.save(newReservation);
 
@@ -123,4 +136,56 @@ public class ReservationServiceImpl implements ReservationService {
             return true;
         }
     }
+
+    @Override
+    public List<ReservationFrontDTO> getReservationsFront() {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
+        List<ReservationFrontDTO> reservationFrontDTOs = new ArrayList<>();
+        List<Reservation> reservations = reservationRepository.findReservationsForThisOwner(Long.parseLong(cp.getUserID()));
+        if(reservations.size() == 0){
+            return reservationFrontDTOs;
+        }
+
+        for(Reservation r : reservations)
+        {
+            ReservationFrontDTO newR = new ReservationFrontDTO();
+            newR.setId(r.getId());
+            newR.setStartDate(r.getStartDate());
+            newR.setEndDate(r.getEndDate());
+            newR.setCurrentPricePerKm(r.getCurrentPricePerKm());
+            newR.setClientFirstName(r.getClientFirstName());
+            newR.setClientLastName(r.getClientLastName());
+            newR.setClientEmail(r.getClientEmail());
+            newR.setClientPhoneNumber(r.getClientPhoneNumber());
+            newR.setPayment(r.getPayment());
+            newR.setOwnerID(r.getOwnerID());
+
+            AdFrontDTO ad = new AdFrontDTO();
+            ad.setId(r.getAdID());
+            newR.setAd(ad);
+
+            reservationFrontDTOs.add(newR);
+        }
+
+        List<Long> adIDs = new ArrayList<>(); //ovo su id od oglasa cije podatke moram da uzmem iz ad-microservice
+        for(Reservation r: reservations){
+            if(!adIDs.contains(r.getAdID())){
+                adIDs.add(r.getAdID());
+            }
+        }
+
+        List<AdFrontDTO> adFrontDTOs = adClient.fillAdsWithInformation(adIDs,cp.getPermissions(),cp.getUserID(),cp.getToken());
+        //popunim podacima o oglasu
+        for(ReservationFrontDTO r: reservationFrontDTOs){
+            AdFrontDTO ad = adFrontDTOs.stream().filter(a -> a.getId() == r.getAd().getId()).findFirst().orElse(null);
+            r.setAd(ad);
+        }
+
+        return reservationFrontDTOs;
+    }
+
+
 }

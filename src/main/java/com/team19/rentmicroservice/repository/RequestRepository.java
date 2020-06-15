@@ -18,6 +18,9 @@ public interface RequestRepository extends JpaRepository<Request,Long> {
     @Query(value="FROM Request r WHERE r.status='Pending' AND r.ownerID=?1")
     List<Request> findAllPendingRequestsForOwner(Long ownerID);
 
+    @Query(value="FROM Request r WHERE r.status='Paid' AND r.ownerID=?1")
+    List<Request> findAllPaidRequestsForOwner(Long ownerID);
+
     @Query(value="FROM Request r WHERE r.status='Pending' AND r.clientID=?1")
     List<Request> findAllPendingRequestsForClient(Long clientID);
 

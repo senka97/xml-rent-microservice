@@ -42,5 +42,7 @@ public interface AdClient {
                               @RequestHeader("userID") String userID,
                               @RequestHeader("Authorization") String token);
 
-
+    @GetMapping(value= "api/priceList/ad/{id}")
+    PriceListAdDTO getPriceListForAd(@PathVariable("id") Long id, @RequestHeader("permissions") String permissions,
+                                     @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
 }
