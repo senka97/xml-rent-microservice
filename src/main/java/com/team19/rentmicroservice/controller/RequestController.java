@@ -126,6 +126,14 @@ public class RequestController {
         return new ResponseEntity(requestFrontDTOs,HttpStatus.OK);
     }
 
+    @GetMapping(value="/paid")
+    @PreAuthorize("hasAuthority('request_read')")
+    public ResponseEntity<?> getPaidRequestsFront(){
+
+        List<RequestFrontDTO> requestFrontDTOs = this.requestService.getPaidRequestsFront();
+        return new ResponseEntity(requestFrontDTOs,HttpStatus.OK);
+    }
+
     @GetMapping(value="/pending/number")
     @PreAuthorize("hasAuthority('request_read')")
     public ResponseEntity<?> getPendingRequestsNumber(){
