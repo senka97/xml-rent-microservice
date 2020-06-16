@@ -1,5 +1,6 @@
 package com.team19.rentmicroservice.service;
 
+import com.rent_a_car.rent_service.soap.*;
 import com.team19.rentmicroservice.dto.RentRequestDTO;
 import com.team19.rentmicroservice.dto.RequestCreatedDTO;
 import com.team19.rentmicroservice.dto.RequestFrontDTO;
@@ -22,4 +23,7 @@ public interface RequestService {
       int getPendingRequestsNumber();
       void rejectAllPendingRequestsForBlockedOrRemovedClient(Long id);
       void rejectPendingRequestsAfter24();
+      GetPendingRResponse findPendingRequestForAgentApp(GetPendingRRequest gpr);
+      RejectPendingRResponse rejectPendingRequestFromAgentApp(RejectPendingRRequest rpr);
+      AcceptPendingRResponse acceptPendingRequestFromAgentApp(AcceptPendingRRequest apr);
 }

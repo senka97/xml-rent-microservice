@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.rent-a-car.com/rent-service/soap"
+           targetNamespace="http://www.rent-a-car.com/rent-service/soap" elementFormDefault="qualified">
+
+    <xs:element name="addReservationRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:long" name="adMainId"/>
+                <xs:element type="xs:string" name="startDate"/>
+                <xs:element type="xs:string" name="endDate"/>
+                <xs:element type="xs:double" name="currentPricePerKm"/>
+                <xs:element type="xs:double" name="payment"/>
+                <xs:element type="xs:string" name="clientFirstName"/>
+                <xs:element type="xs:string" name="clientLastName"/>
+                <xs:element type="xs:string" name="clientPhoneNumber"/>
+                <xs:element type="xs:string" name="clientEmail"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="addReservationResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:boolean" name="success"/>
+                <xs:element type="xs:long" name="mainId"/>
+                <xs:element name="canceledRequests" type="xs:long" maxOccurs="unbounded" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+
+
+</xs:schema>

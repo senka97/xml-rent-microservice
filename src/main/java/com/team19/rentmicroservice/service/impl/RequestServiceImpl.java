@@ -1,5 +1,6 @@
 package com.team19.rentmicroservice.service.impl;
 
+import com.rent_a_car.rent_service.soap.*;
 import com.team19.rentmicroservice.client.AdClient;
 import com.team19.rentmicroservice.client.UserClient;
 import com.team19.rentmicroservice.dto.*;
@@ -7,6 +8,7 @@ import com.team19.rentmicroservice.enums.RequestStatus;
 import com.team19.rentmicroservice.model.CartItem;
 import com.team19.rentmicroservice.model.Request;
 import com.team19.rentmicroservice.model.RequestAd;
+import com.team19.rentmicroservice.model.UserInfo;
 import com.team19.rentmicroservice.repository.CartItemRepository;
 import com.team19.rentmicroservice.repository.RequestAdRepository;
 import com.team19.rentmicroservice.repository.RequestRepository;
@@ -18,12 +20,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RequestServiceImpl implements RequestService {
@@ -346,6 +353,143 @@ public class RequestServiceImpl implements RequestService {
                }
                this.requestRepository.saveAll(requests);
            }
+    }
+
+
+
+    @Override
+    @Transactional //ovo zbog lazy loading-a, jer se zatvori sesija i ne mogu se procitati requestAds od request
+    public GetPendingRResponse findPendingRequestForAgentApp(GetPendingRRequest gpr) {
+
+        //prvo proverim da li su neki zahtevi koji su na agentskoj Pending postali
+        //u medjuvremenu na glavnoj Canceled (ako ih je neko otkazao)
+        List<Long> canceledIds = new ArrayList<>();
+        if(gpr.getIds().size() > 0) { //ako uopste postoje pending zahtevi na agentskoj
+            List<Request> canceledRequests = this.requestRepository.checkIfPendingRequestsBecameCanceled(gpr.getIds());
+            //ako ima oni koji su otkazani uzmem njihove id
+            if (canceledRequests.size() > 0) {
+                canceledIds.addAll(canceledRequests.stream().map(Request::getId).collect(Collectors.toList()));
+            }
+        }
+        //Zatim uzmem sve pending koje se ne nalaze u poslatim pending sa agenta i dodam ih
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
+        List<Request> pendingRequests = new ArrayList<>();
+        if(gpr.getIds().size() > 0) { //ako na agentu postoje pending, pronadji sve pending izuzev njih
+            pendingRequests = this.requestRepository.findPendingRequestForAgentApp(gpr.getIds(), Long.parseLong(cp.getUserID()));
+        }else{ //ako ne postoje na agentu pending pronadji sve pending za agenta
+            pendingRequests = this.requestRepository.findAllPendingRequestsForOwner(Long.parseLong(cp.getUserID()));
+        }
+
+        List<RequestSOAP> requestSOAPS = new ArrayList<>();
+        for(Request r: pendingRequests){
+            RequestSOAP requestSOAP = new RequestSOAP();
+            UserInfoDTO userInfoDTO = this.userClient.getUserInfo(r.getClientID(),cp.getToken());
+            requestSOAP.setId(r.getId());
+            requestSOAP.setClientFirstName(userInfoDTO.getName());
+            requestSOAP.setClientLastName(userInfoDTO.getSurname());
+            requestSOAP.setClientPhoneNumber(userInfoDTO.getPhoneNumber());
+            requestSOAP.setClientEmail(userInfoDTO.getEmail());
+            for(RequestAd ra: r.getRequestAds()){
+                RequestAdSOAP requestAdSOAP = new RequestAdSOAP();
+                requestAdSOAP.setId(ra.getId());
+                requestAdSOAP.setAdId(ra.getAdID());
+                requestAdSOAP.setCurrentPricePerKm(ra.getCurrentPricePerKm());
+                requestAdSOAP.setPayment(ra.getPayment());
+                requestAdSOAP.setStartDate(ra.getStartDate().toString());
+                requestAdSOAP.setEndDate(ra.getEndDate().toString());
+                requestSOAP.getRequestAdSOAP().add(requestAdSOAP);
+            }
+            requestSOAPS.add(requestSOAP);
+        }
+
+        System.out.println(requestSOAPS.size());
+        GetPendingRResponse getPendingRResponse = new GetPendingRResponse();
+        getPendingRResponse.getCanceledRequests().addAll(canceledIds);
+        getPendingRResponse.getRequestSOAP().addAll(requestSOAPS);
+
+        return getPendingRResponse;
+    }
+
+    @Override
+    public RejectPendingRResponse rejectPendingRequestFromAgentApp(RejectPendingRRequest rpr) {
+
+        Request r = this.requestRepository.findById(rpr.getIdMain()).orElse(null);
+        if(r == null){
+            RejectPendingRResponse rpResponse = new RejectPendingRResponse();
+            rpResponse.setSuccess(false);
+            rpResponse.setMessage("Request with that id doesn't exist in the main app. Please contact technical support.");
+            return rpResponse;
+        }else{
+            r.setStatus(RequestStatus.Canceled);
+            this.requestRepository.save(r);
+            RejectPendingRResponse rpResponse = new RejectPendingRResponse();
+            rpResponse.setSuccess(true);
+            rpResponse.setMessage("Request successfully rejected in the main app.");
+            return rpResponse;
+        }
+
+    }
+
+    @Override
+    @Transactional //isto zbog lazy loading Request.requestAds
+    public AcceptPendingRResponse acceptPendingRequestFromAgentApp(AcceptPendingRRequest apr) {
+        Request request = this.requestRepository.findById(apr.getIdMain()).orElse(null);
+        System.out.println("Zahtev koji se prihvata: " + apr.getIdMain());
+        if(request == null){
+            AcceptPendingRResponse apResponse = new AcceptPendingRResponse();
+            apResponse.setSuccess(false);
+            apResponse.setMessage("Request with that id doesn't exist in the main app. Please contact technical support.");
+            return apResponse;
+        }else{
+
+            //proverim da li ga je mozda neko otkazao u medjuvremenu
+            if(request.getStatus().toString() == "Canceled"){
+                System.out.println("Zahtev koji se prihvata je otkazan.");
+                AcceptPendingRResponse apResponse = new AcceptPendingRResponse();
+                apResponse.setSuccess(false);
+                apResponse.setMessage("Request with that id has been canceled.");
+                return apResponse;
+            }
+
+            //ako nije onda ga prihvatim
+            request.setStatus(RequestStatus.Paid);
+            requestRepository.save(request);
+
+            // omogucavanje postavljanja komentara i ocenjivanje za svaki zahtev
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+            for(RequestAd ra: request.getRequestAds())
+            {
+                this.adClient.createUserCanPostComment(ra.getAdID(), ra.getClientID(), ra.getEndDate().toString() ,cp.getPermissions(),cp.getUserID(),cp.getToken());
+                adClient.createUserCanRate(ra.getClientID(), ra.getAdID(), ra.getEndDate().toString(),
+                        cp.getPermissions(), cp.getUserID(), cp.getToken());
+            }
+
+            //automatski se odbijaju svi postojeci zahtevi u statusu pending koji se poklapaju sa
+            //terminima oglasa u zahtevu koji se odobrava
+            List<Long> canceledRequest = new ArrayList<>(); //zahtevi koji su odbijeni i salju se na agenta da se i tamo odbiju
+            for(RequestAd ra: request.getRequestAds()){
+                List<Request> requests = requestRepository.findPendingRequests(ra.getAdID(),ra.getStartDate(),ra.getEndDate());
+                //sve pronadjene odbijam
+                if(requests.size()!=0) {
+                    for (Request r : requests) {
+                        r.setStatus(RequestStatus.Canceled);
+                        canceledRequest.add(r.getId());
+                    }
+                    requestRepository.saveAll(requests);
+                    //ovde bi trebalo poslati mejl da su zahtevi odbijeni
+                }
+            }
+
+            AcceptPendingRResponse apResponse = new AcceptPendingRResponse();
+            apResponse.setSuccess(true);
+            apResponse.getCanceledRequests().addAll(canceledRequest);
+            System.out.println("Odbijenih zahteva je: " + canceledRequest.size());
+            apResponse.setMessage("Request successfully accepted in the main app.");
+            return apResponse;
+        }
     }
 
 }

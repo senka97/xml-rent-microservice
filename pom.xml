@@ -103,6 +103,8 @@
                 <configuration>
                     <sources>
                         <source>${project.basedir}/src/main/resources/test.xsd</source>
+                        <source>${project.basedir}/src/main/resources/request.xsd</source>
+                        <source>${project.basedir}/src/main/resources/reservation.xsd</source>
                     </sources>
                 </configuration>
             </plugin>

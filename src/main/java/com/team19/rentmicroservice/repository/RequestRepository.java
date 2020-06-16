@@ -27,4 +27,10 @@ public interface RequestRepository extends JpaRepository<Request,Long> {
     @Query(value="FROM Request r WHERE r.status='Pending' AND r.creationTime<?1")
     List<Request> findPendingRequestsAfter24(LocalDateTime time);
 
+    @Query(value = "FROM Request r WHERE r.id IN ?1 AND r.status='Canceled'")
+    List<Request> checkIfPendingRequestsBecameCanceled(List<Long> ids);
+
+    @Query(value = "FROM Request r WHERE r.id NOT IN ?1 AND r.ownerID=?2 AND r.status='Pending'")
+    List<Request> findPendingRequestForAgentApp(List<Long> ids, Long id);
+
 }

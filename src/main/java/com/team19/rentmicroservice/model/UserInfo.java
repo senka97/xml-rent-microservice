@@ -24,6 +24,8 @@ public class UserInfo {
     private String role;
     @Column(name="companyName") //ako je agent
     private String companyName;
+    @Column(name="phoneNumber") //ako je client
+    private String phoneNumber;
     @OneToMany(mappedBy = "fromUserInfo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Message> messages;
 
@@ -103,5 +105,13 @@ public class UserInfo {
 
     public void setMessages(Set<Message> messages) {
         this.messages = messages;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 }
