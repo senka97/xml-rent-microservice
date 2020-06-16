@@ -126,11 +126,27 @@ public class RequestController {
         return new ResponseEntity(requestFrontDTOs,HttpStatus.OK);
     }
 
+    @GetMapping(value="/pending/client/{id}")
+    @PreAuthorize("hasAuthority('request_read')")
+    public ResponseEntity<?> getPendingRequestsClientFront(@PathVariable("id") Long clientId){
+
+        List<RequestFrontDTO> requestFrontDTOs = this.requestService.getPendingRequestsClientFront(clientId);
+        return new ResponseEntity(requestFrontDTOs,HttpStatus.OK);
+    }
+
     @GetMapping(value="/paid")
     @PreAuthorize("hasAuthority('request_read')")
     public ResponseEntity<?> getPaidRequestsFront(){
 
         List<RequestFrontDTO> requestFrontDTOs = this.requestService.getPaidRequestsFront();
+        return new ResponseEntity(requestFrontDTOs,HttpStatus.OK);
+    }
+
+    @GetMapping(value="/paid/client/{id}")
+    @PreAuthorize("hasAuthority('request_read')")
+    public ResponseEntity<?> getPaidRequestsClientFront(@PathVariable("id") Long clientId){
+
+        List<RequestFrontDTO> requestFrontDTOs = this.requestService.getPaidRequestsClientFront(clientId);
         return new ResponseEntity(requestFrontDTOs,HttpStatus.OK);
     }
 

@@ -209,37 +209,6 @@ public class RequestServiceImpl implements RequestService {
         if(pendingRequests.size() == 0){
             return requestFrontDTOs;
         }
-       /* List<ClientFrontDTO> clientFrontDTOs = new ArrayList<>(); //ovo su podaci koje moram da uzmem iz user-microservice
-        List<Long> adIDs = new ArrayList<>(); //ovo su id od oglasa cije podatke moram da uzmem iz ad-microservice
-        for(Request r: pendingRequests){
-            requestFrontDTOs.add(new RequestFrontDTO(r));
-            if(!clientFrontDTOs.stream().filter(c -> c.getId() == r.getClientID()).findFirst().isPresent()){
-                clientFrontDTOs.add(new ClientFrontDTO(r.getClientID()));
-            }
-            for(RequestAd ra: r.getRequestAds()){
-                if(!adIDs.contains(ra.getAdID())){
-                    adIDs.add(ra.getAdID());
-                }
-            }
-        }
-        //popunila sam informacijama za zahtev i napravila listu klijenata i oglasa cije informacije moram da dobavim
-        clientFrontDTOs = userClient.fillClients(clientFrontDTOs, cp.getToken());
-        //popunim informacijama o klijentima
-        for(RequestFrontDTO r: requestFrontDTOs){
-             ClientFrontDTO client = clientFrontDTOs.stream().filter(c -> c.getId() == r.getClientID()).findFirst().orElse(null);
-             r.setClientLastName(client.getSurname());
-             r.setClientName(client.getName());
-        }
-        //kad sam popunila podacima o klijentu, saljem u ad-microservice da se popune podaci o oglasu
-        List<AdFrontDTO> adFrontDTOs = adClient.fillAdsWithInformation(adIDs,cp.getPermissions(),cp.getUserID(),cp.getToken());
-
-        //popunim podacima o oglasu
-        for(RequestFrontDTO r: requestFrontDTOs){
-            for(RequestAdFrontDTO ra: r.getRequestAds()){
-                AdFrontDTO ad = adFrontDTOs.stream().filter(a -> a.getId() == ra.getAd().getId()).findFirst().orElse(null);
-                ra.setAd(ad);
-            }
-        }*/
 
         requestFrontDTOs = getDataForRequestFrontDTO(requestFrontDTOs, pendingRequests, cp);
 
@@ -261,6 +230,41 @@ public class RequestServiceImpl implements RequestService {
         requestFrontDTOs = getDataForRequestFrontDTO(requestFrontDTOs, paidRequests, cp);
 
         return requestFrontDTOs;
+    }
+
+    @Override
+    public List<RequestFrontDTO> getPendingRequestsClientFront(Long clientId) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
+        List<RequestFrontDTO> requestFrontDTOs = new ArrayList<>();
+        List<Request> pendingRequests = this.requestRepository.findAllPendingRequestsForClient(clientId);
+        if(pendingRequests.size() == 0){
+            return requestFrontDTOs;
+        }
+
+        requestFrontDTOs = getDataForRequestFrontDTO(requestFrontDTOs, pendingRequests, cp);
+        return requestFrontDTOs;
+    }
+
+    @Override
+    public List<RequestFrontDTO> getPaidRequestsClientFront(Long clientId) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
+        List<RequestFrontDTO> requestFrontDTOs = new ArrayList<>();
+        List<Request> paidRequests = this.requestRepository.findAllPaidRequestsForClient(clientId);
+        if(paidRequests.size() == 0){
+            return requestFrontDTOs;
+        }
+
+        requestFrontDTOs = getDataForRequestFrontDTO(requestFrontDTOs, paidRequests, cp);
+
+        return requestFrontDTOs;
+
+
     }
 
     public List<RequestFrontDTO> getDataForRequestFrontDTO(List<RequestFrontDTO> requestFrontDTOs, List<Request> requests, CustomPrincipal cp)
