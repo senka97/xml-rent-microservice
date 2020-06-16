@@ -24,6 +24,9 @@ public interface RequestRepository extends JpaRepository<Request,Long> {
     @Query(value="FROM Request r WHERE r.status='Pending' AND r.clientID=?1")
     List<Request> findAllPendingRequestsForClient(Long clientID);
 
+    @Query(value="FROM Request r WHERE r.status='Paid' AND r.clientID=?1")
+    List<Request> findAllPaidRequestsForClient(Long clientID);
+
     @Query(value="FROM Request r WHERE r.status='Pending' AND r.creationTime<?1")
     List<Request> findPendingRequestsAfter24(LocalDateTime time);
 

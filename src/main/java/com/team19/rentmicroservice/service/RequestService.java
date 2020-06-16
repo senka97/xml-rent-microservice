@@ -19,7 +19,9 @@ public interface RequestService {
       void rejectRequest(Request request);
       void cancelRequest(Request request);
       List<RequestFrontDTO> getPendingRequestsFront();
+      List<RequestFrontDTO> getPendingRequestsClientFront(Long clientId);
       List<RequestFrontDTO> getPaidRequestsFront();
+      List<RequestFrontDTO> getPaidRequestsClientFront(Long clientId);
       int getPendingRequestsNumber();
       void rejectAllPendingRequestsForBlockedOrRemovedClient(Long id);
       void rejectPendingRequestsAfter24();
