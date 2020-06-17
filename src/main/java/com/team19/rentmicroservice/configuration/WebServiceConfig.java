@@ -38,4 +38,34 @@ public class WebServiceConfig extends WsConfigurerAdapter {
     public XsdSchema testSchema() {
         return new SimpleXsdSchema(new ClassPathResource("test.xsd"));
     }
+
+    @Bean(name = "request")
+    public DefaultWsdl11Definition defaultWsdl11Definition2(XsdSchema requestSchema) {
+        DefaultWsdl11Definition wsdl11Definition = new DefaultWsdl11Definition();
+        wsdl11Definition.setPortTypeName("RequestPort");
+        wsdl11Definition.setLocationUri("/ws");
+        wsdl11Definition.setTargetNamespace("http://www.rent-a-car.com/rent-service/soap");
+        wsdl11Definition.setSchema(requestSchema);
+        return wsdl11Definition;
+    }
+
+    @Bean
+    public XsdSchema requestSchema() {
+        return new SimpleXsdSchema(new ClassPathResource("request.xsd"));
+    }
+
+    @Bean(name = "reservation")
+    public DefaultWsdl11Definition defaultWsdl11Definition3(XsdSchema reservationSchema) {
+        DefaultWsdl11Definition wsdl11Definition = new DefaultWsdl11Definition();
+        wsdl11Definition.setPortTypeName("ReservationPort");
+        wsdl11Definition.setLocationUri("/ws");
+        wsdl11Definition.setTargetNamespace("http://www.rent-a-car.com/rent-service/soap");
+        wsdl11Definition.setSchema(reservationSchema);
+        return wsdl11Definition;
+    }
+
+    @Bean
+    public XsdSchema reservationSchema() {
+        return new SimpleXsdSchema(new ClassPathResource("reservation.xsd"));
+    }
 }

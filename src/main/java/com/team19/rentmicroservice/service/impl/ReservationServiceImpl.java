@@ -1,5 +1,7 @@
 package com.team19.rentmicroservice.service.impl;
 
+import com.rent_a_car.rent_service.soap.AddReservationRequest;
+import com.rent_a_car.rent_service.soap.AddReservationResponse;
 import com.team19.rentmicroservice.client.AdClient;
 import com.team19.rentmicroservice.dto.*;
 import com.team19.rentmicroservice.enums.RequestStatus;
@@ -185,6 +187,51 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         return reservationFrontDTOs;
+    }
+
+    @Override
+    public AddReservationResponse addNewReservationFromAgentApp(AddReservationRequest arr) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+        AdDTOSimple ad = this.adClient.getAd(arr.getAdMainId(),cp.getPermissions(),cp.getUserID(),cp.getToken());
+        if(ad != null){
+
+            Reservation newReservation = new Reservation();
+            newReservation.setOwnerID(Long.parseLong(cp.getUserID()));
+            newReservation.setAdID(ad.getId());
+            newReservation.setClientFirstName(arr.getClientFirstName());
+            newReservation.setClientLastName(arr.getClientLastName());
+            newReservation.setClientPhoneNumber(arr.getClientPhoneNumber());
+            newReservation.setClientEmail(arr.getClientEmail());
+            newReservation.setStartDate(LocalDate.parse(arr.getStartDate()));
+            newReservation.setEndDate(LocalDate.parse(arr.getEndDate()));
+            newReservation.setCurrentPricePerKm(arr.getCurrentPricePerKm());
+            newReservation.setPayment(arr.getPayment());
+            newReservation = this.reservationRepository.save(newReservation);
+
+            //automatski se odbiju svi zahtevi koji su Pending i koji se poklapaju sa ovim terminom
+            List<Request> requests = requestService.findPendingRequests(arr.getAdMainId(),LocalDate.parse(arr.getStartDate()),LocalDate.parse(arr.getEndDate()));
+            List<Long> canceledRequests = new ArrayList<>(); //otkazani zahtevi koji se salju na agenta da se i tamo otkazu
+            if(requests.size() != 0) {
+                for (Request r : requests) {
+                    r.setStatus(RequestStatus.Canceled);
+                    canceledRequests.add(r.getId());
+                    //mozda ovde poslati mejlove da im je odbijen zahtev
+                }
+                requestService.saveAll(requests);
+            }
+            AddReservationResponse addReservationResponse = new AddReservationResponse();
+            addReservationResponse.setSuccess(true);
+            addReservationResponse.setMainId(newReservation.getId());
+            addReservationResponse.getCanceledRequests().addAll(canceledRequests);
+            return addReservationResponse;
+
+        }else {
+            AddReservationResponse addReservationResponse = new AddReservationResponse();
+            addReservationResponse.setSuccess(false);
+            return addReservationResponse;
+        }
     }
 
 
