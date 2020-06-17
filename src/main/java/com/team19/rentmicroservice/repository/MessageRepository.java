@@ -13,4 +13,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query(value="FROM Message m WHERE m.request.id=?1 ORDER BY m.dateTime ASC")
     List<Message> findMessagesForRequest(Long id);
 
+    @Query(value="FROM Message m WHERE m.request.id=?1 AND m.id NOT IN ?2")
+    List<Message> findNewMessagesForRequestForAgentApp(Long id, List<Long> existingMessages);
+
 }

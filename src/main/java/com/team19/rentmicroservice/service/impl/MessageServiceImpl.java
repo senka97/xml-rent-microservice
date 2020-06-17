@@ -1,5 +1,6 @@
 package com.team19.rentmicroservice.service.impl;
 
+import com.rent_a_car.rent_service.soap.*;
 import com.team19.rentmicroservice.client.UserClient;
 import com.team19.rentmicroservice.dto.MessageRequestDTO;
 import com.team19.rentmicroservice.dto.MessageResponseDTO;
@@ -17,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,4 +97,89 @@ public class MessageServiceImpl implements MessageService {
         message = messageRepository.save(message);
         return new MessageResponseDTO(message);
     }
+
+    @Override
+    @Transactional //zbog userInfo, sesija se zatvori
+    public GetMessagesResponse getMessagesForAgentApp(GetMessagesRequest gmr) {
+
+        List<Message> newMessages;
+        //ako su postojale neke poruke na agentu uzmi nove, koje nisu te
+        if(gmr.getExistingMessages().size()>0) {
+            newMessages = this.messageRepository.findNewMessagesForRequestForAgentApp(gmr.getMainIdRequest(), gmr.getExistingMessages());
+        }else{ //ako nisu postojale poruke na agentu uzmi sve za taj zahtev
+            newMessages = this.messageRepository.findMessagesForRequest(gmr.getMainIdRequest());
+        }
+
+        List<MessageResponseSOAP> messageResponseSOAPS = new ArrayList<>();
+        for(Message m: newMessages){
+            MessageResponseSOAP mrs = new MessageResponseSOAP();
+            mrs.setMainId(m.getId());
+            mrs.setContent(m.getContent());
+            mrs.setDateTime(m.getDateTime().toString());
+            mrs.setFromUserId(m.getFromUserInfo().getUserId());
+            if(m.getFromUserInfo().getRole().equals("ROLE_AGENT")){
+                mrs.setFromUserInfo(m.getFromUserInfo().getName() + " " + m.getFromUserInfo().getSurname() + " (" + m.getFromUserInfo().getCompanyName() + ")");
+            }else{
+                mrs.setFromUserInfo(m.getFromUserInfo().getName() + " " + m.getFromUserInfo().getSurname());
+            }
+            messageResponseSOAPS.add(mrs);
+        }
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
+        GetMessagesResponse gmResponse = new GetMessagesResponse();
+        gmResponse.setAgentId(Long.parseLong(cp.getUserID()));
+        gmResponse.getMessageResponseSOAP().addAll(messageResponseSOAPS);
+
+        return gmResponse;
+    }
+
+    @Override
+    @Transactional //zbog userInfo, sesija se zatvori
+    public AddMessageResponse addMessageFromAgentApp(AddMessageRequest amr) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
+        UserInfo userInfo = userInfoService.findUserInfoByUserId(Long.parseLong(cp.getUserID()));
+        //ako se korisnik ne nalazi ovde u bazi, dovucem ga iz user servisa i sacuvam ovde
+        if(userInfo == null){
+            UserInfoDTO userInfoDTO = this.userClient.getUserInfo(Long.parseLong(cp.getUserID()),cp.getToken());
+            userInfo = new UserInfo(userInfoDTO);
+            userInfo = this.userInfoService.saveUserInfo(userInfo);
+        }
+
+        Request request = this.requestService.findOne(amr.getMainIdRequest());
+
+        //ako zahtev ne postoji vraca se kao neuspeh
+        if(request == null){
+            AddMessageResponse amResponse = new AddMessageResponse();
+            amResponse.setSuccess(false);
+            MessageResponseSOAP mrs = new MessageResponseSOAP();
+            amResponse.setMessageResponseSOAP(mrs);
+            return amResponse;
+        }
+
+        Message message = new Message(amr.getContent(), LocalDateTime.now(),userInfo,request);
+        message = messageRepository.save(message);
+
+        MessageResponseSOAP mrs = new MessageResponseSOAP();
+        mrs.setMainId(message.getId());
+        mrs.setContent(message.getContent());
+        mrs.setDateTime(message.getDateTime().toString());
+        mrs.setFromUserId(message.getFromUserInfo().getUserId());
+        if(message.getFromUserInfo().getRole().equals("ROLE_AGENT")){
+            mrs.setFromUserInfo(message.getFromUserInfo().getName() + " " + message.getFromUserInfo().getSurname() + " (" + message.getFromUserInfo().getCompanyName() + ")");
+        }else{
+            mrs.setFromUserInfo(message.getFromUserInfo().getName() + " " + message.getFromUserInfo().getSurname());
+        }
+
+        AddMessageResponse amResponse = new AddMessageResponse();
+        amResponse.setSuccess(true);
+        amResponse.setMessageResponseSOAP(mrs);
+        return amResponse;
+    }
+
+
 }
