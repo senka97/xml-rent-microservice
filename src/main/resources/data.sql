@@ -8,5 +8,5 @@ insert into reservation (adid, start_date, end_date, ownerid, current_price_per_
 insert into user_info (user_id, name, surname, email, role, company_name) value (3, 'Client1', 'Client', 'client@gmail.com','ROLE_CLIENT', null);
 insert into user_info (user_id, name, surname, email, role, company_name) value (2, 'Agent1', 'Agent', 'agent@gmail.com','ROLE_AGENT','My Company');
 
-insert into message (content, date_time, from_user_info_id, request_id) value ('Ovo je poruka od klijenta.', '2020-06-04 09:11:00',  1, 1);
-insert into message (content, date_time, from_user_info_id, request_id) value ('Ovo je poruka od vlasnika.', '2020-06-04 09:15:00',  2, 1);
+insert into message (content, date_time, from_user_info_id, request_id) value ('Ovo je poruka od klijenta.', '2020-06-04 09:11:12',  1, 1);
+insert into message (content, date_time, from_user_info_id, request_id) value ('Ovo je poruka od vlasnika.', '2020-06-04 09:15:23',  2, 1);

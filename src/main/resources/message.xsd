@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.rent-a-car.com/rent-service/soap"
+           targetNamespace="http://www.rent-a-car.com/rent-service/soap" elementFormDefault="qualified">
+
+    <xs:element name="messageResponseSOAP">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:long" name="mainId"/>
+                <xs:element type="xs:string" name="content"/>
+                <xs:element type="xs:string" name="dateTime"/>
+                <xs:element type="xs:long" name="fromUserId"/>
+                <xs:element type="xs:string" name="fromUserInfo"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+
+    <xs:element name="getMessagesRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:long" name="mainIdRequest"/>
+                <xs:element name="existingMessages" type="xs:long" maxOccurs="unbounded" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="getMessagesResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:long" name="agentId"/>
+                <xs:element ref="tns:messageResponseSOAP" maxOccurs="unbounded" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+
+    <xs:element name="addMessageRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:long" name="mainIdRequest"/>
+                <xs:element type="xs:string" name="content"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="addMessageResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:boolean" name="success"/>
+                <xs:element ref="tns:messageResponseSOAP"/> <!--Poruka koja je poslata-->
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
