@@ -5,6 +5,8 @@ public class PriceListAdDTO {
     private Long adID;
     private double pricePerKm;
     private double pricePerDay;
+    private double priceForCdw;
+    private boolean cdwAd; //da li oglas ima ukljucen cdw da bi se on sracunao u cenu
     private int discount20Days;
     private int discount30Days;
 
@@ -16,6 +18,8 @@ public class PriceListAdDTO {
         this.adID = adID;
         this.pricePerKm = 0;
         this.pricePerDay = 0;
+        this.priceForCdw = 0;
+        this.cdwAd = false;
         this.discount20Days = 0;
         this.discount30Days = 0;
     }
@@ -58,5 +62,21 @@ public class PriceListAdDTO {
 
     public void setDiscount30Days(int discount30Days) {
         this.discount30Days = discount30Days;
+    }
+
+    public double getPriceForCdw() {
+        return priceForCdw;
+    }
+
+    public void setPriceForCdw(double priceForCdw) {
+        this.priceForCdw = priceForCdw;
+    }
+
+    public boolean isCdwAd() {
+        return cdwAd;
+    }
+
+    public void setCdwAd(boolean cdwAd) {
+        this.cdwAd = cdwAd;
     }
 }
