@@ -100,9 +100,25 @@ public class ReservationServiceImpl implements ReservationService {
             if(days<20){
                 payment = days*pl.getPricePerDay();
             }else if(days>=20 && days<30){
-                payment = days*pl.getPricePerDay() - (pl.getDiscount20Days()/100)*(days*pl.getPricePerDay());
+                if(pl.getDiscount20Days() > 0) { //ako postoji popust za vise od 20 dana
+                    payment = days * pl.getPricePerDay() - (pl.getDiscount20Days() / 100) * (days * pl.getPricePerDay());
+                }else{
+                    payment = days*pl.getPricePerDay();
+                }
             }else{
-                payment = days*pl.getPricePerDay() - (pl.getDiscount30Days()/100)*(days*pl.getPricePerDay());
+                if(pl.getDiscount30Days() > 0) { //ako postoji popust za vise od 30 dana
+                    payment = days * pl.getPricePerDay() - (pl.getDiscount30Days() / 100) * (days * pl.getPricePerDay());
+                }else{ //ako ne postoji za vise od 30, proverim da li postoji za vise od 20 dana
+                    if(pl.getDiscount20Days() > 0){
+                        payment = days * pl.getPricePerDay() - (pl.getDiscount20Days() / 100) * (days * pl.getPricePerDay());
+                    }else{ //ako ne postoji ni za vise od 20 dana
+                        payment = days*pl.getPricePerDay();
+                    }
+                }
+            }
+            //proverim da li oglas ukljucuje cdw i dodam i cenu za to
+            if(pl.isCdwAd()){
+                payment += pl.getPriceForCdw();
             }
             newReservation.setPayment(payment);
 

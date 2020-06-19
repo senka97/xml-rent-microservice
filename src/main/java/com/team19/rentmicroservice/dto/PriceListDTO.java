@@ -8,6 +8,8 @@ public class PriceListDTO {
 
     private double pricePerDay;
 
+    private double priceForCdw;
+
     private int discount20Days;
 
     private int discount30Days;
@@ -65,5 +67,13 @@ public class PriceListDTO {
 
     public void setAlias(String alias) {
         this.alias = alias;
+    }
+
+    public double getPriceForCdw() {
+        return priceForCdw;
+    }
+
+    public void setPriceForCdw(double priceForCdw) {
+        this.priceForCdw = priceForCdw;
     }
 }
