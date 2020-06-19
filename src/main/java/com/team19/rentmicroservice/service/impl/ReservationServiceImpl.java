@@ -164,6 +164,7 @@ public class ReservationServiceImpl implements ReservationService {
             newR.setClientPhoneNumber(r.getClientPhoneNumber());
             newR.setPayment(r.getPayment());
             newR.setOwnerID(r.getOwnerID());
+            newR.setReportCreated(r.getReportCreated());
 
             AdFrontDTO ad = new AdFrontDTO();
             ad.setId(r.getAdID());
@@ -208,6 +209,7 @@ public class ReservationServiceImpl implements ReservationService {
             newReservation.setEndDate(LocalDate.parse(arr.getEndDate()));
             newReservation.setCurrentPricePerKm(arr.getCurrentPricePerKm());
             newReservation.setPayment(arr.getPayment());
+            newReservation.setReportCreated(false);
             newReservation = this.reservationRepository.save(newReservation);
 
             //automatski se odbiju svi zahtevi koji su Pending i koji se poklapaju sa ovim terminom
@@ -234,5 +236,15 @@ public class ReservationServiceImpl implements ReservationService {
         }
     }
 
+    @Override
+    public Reservation findById(Long id) {
 
+        return  reservationRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public Reservation save(Reservation reservation) {
+
+        return reservationRepository.save(reservation);
+    }
 }

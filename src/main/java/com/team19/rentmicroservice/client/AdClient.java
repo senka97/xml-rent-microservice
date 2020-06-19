@@ -45,4 +45,8 @@ public interface AdClient {
     @GetMapping(value= "api/priceList/ad/{id}")
     PriceListAdDTO getPriceListForAd(@PathVariable("id") Long id, @RequestHeader("permissions") String permissions,
                                      @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
+
+    @PutMapping(value="api/ad/{id}/car")
+    Boolean changeMileageAfterReport(@PathVariable("id") Long adId, @RequestBody double mileage, @RequestHeader("permissions") String permissions,
+                                    @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
 }

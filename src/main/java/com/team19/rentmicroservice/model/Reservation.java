@@ -40,6 +40,12 @@ public class Reservation {
     @Column(name="ownerID")
     private Long ownerID;
 
+    @OneToOne(mappedBy = "reservation")
+    private Report report;
+
+    @Column(name = "reportCreated")
+    private Boolean reportCreated = false;
+
     public Reservation(){
 
     }
@@ -130,5 +136,21 @@ public class Reservation {
 
     public void setPayment(double payment) {
         this.payment = payment;
+    }
+
+    public Report getReport() {
+        return report;
+    }
+
+    public void setReport(Report report) {
+        this.report = report;
+    }
+
+    public Boolean getReportCreated() {
+        return reportCreated;
+    }
+
+    public void setReportCreated(Boolean reportCreated) {
+        this.reportCreated = reportCreated;
     }
 }

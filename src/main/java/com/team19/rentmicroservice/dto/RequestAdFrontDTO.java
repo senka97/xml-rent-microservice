@@ -12,6 +12,7 @@ public class RequestAdFrontDTO {
     private double payment;
     private double currentPricePerKm;
     private AdFrontDTO ad;
+    private boolean reportCreated;
 
     public RequestAdFrontDTO(){
 
@@ -24,6 +25,7 @@ public class RequestAdFrontDTO {
         this.payment = requestAd.getPayment();
         this.currentPricePerKm = requestAd.getCurrentPricePerKm();
         this.ad = new AdFrontDTO(requestAd.getAdID());
+        this.reportCreated = requestAd.getReportCreated();
     }
 
     public Long getId() {
@@ -72,5 +74,13 @@ public class RequestAdFrontDTO {
 
     public void setAd(AdFrontDTO ad) {
         this.ad = ad;
+    }
+
+    public boolean isReportCreated() {
+        return reportCreated;
+    }
+
+    public void setReportCreated(boolean reportCreated) {
+        this.reportCreated = reportCreated;
     }
 }

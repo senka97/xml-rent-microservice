@@ -106,6 +106,7 @@
                         <source>${project.basedir}/src/main/resources/request.xsd</source>
                         <source>${project.basedir}/src/main/resources/reservation.xsd</source>
                         <source>${project.basedir}/src/main/resources/message.xsd</source>
+                        <source>${project.basedir}/src/main/resources/report.xsd</source>
                     </sources>
                 </configuration>
             </plugin>
