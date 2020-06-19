@@ -17,4 +17,6 @@ public interface ReservationService {
     boolean checkIfAdReserved(Long adID, LocalDate startDate, LocalDate endDate);
     List<ReservationFrontDTO> getReservationsFront();
     AddReservationResponse addNewReservationFromAgentApp(AddReservationRequest arr);
+    Reservation findById(Long id);
+    Reservation save(Reservation reservation);
 }

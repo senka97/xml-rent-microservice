@@ -27,4 +27,16 @@ public class RequestAdServiceImpl implements RequestAdService {
             return true;
         }
     }
+
+    @Override
+    public RequestAd findById(Long id) {
+
+        return requestAdRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public RequestAd save(RequestAd requestAd) {
+
+        return requestAdRepository.save(requestAd);
+    }
 }

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.rent-a-car.com/rent-service/soap"
+           targetNamespace="http://www.rent-a-car.com/rent-service/soap" elementFormDefault="qualified">
+
+    <xs:element name="reportSOAP">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:long" name="id"/>
+                <xs:element type="xs:string" name="content"/>
+                <xs:element type="xs:double" name="km"/>
+                <xs:element type="xs:long" name="requestAdId"/>
+                <xs:element type="xs:long" name="reservationId"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+
+    <xs:element name="createRequestReportRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="tns:reportSOAP"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="createRequestReportResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:boolean" name="reportCreated"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="createReservationReportRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="tns:reportSOAP"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="createReservationReportResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="xs:boolean" name="reportCreated"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+
+</xs:schema>

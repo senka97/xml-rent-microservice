@@ -26,6 +26,12 @@ public class RequestAd {
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Request request;
 
+    @OneToOne(mappedBy = "requestAd")
+    private Report report;
+
+    @Column(name = "reportCreated")
+    private Boolean reportCreated;
+
     public RequestAd(){
 
     }
@@ -38,7 +44,7 @@ public class RequestAd {
         this.adID = cartItem.getAdID();
         this.currentPricePerKm = 0; //treba dobaviti iz car-microservice
         this.payment = 0;
-
+        this.reportCreated = false;
     }
 
     public Long getId() {
@@ -111,5 +117,21 @@ public class RequestAd {
 
     public void setPayment(double payment) {
         this.payment = payment;
+    }
+
+    public Report getReport() {
+        return report;
+    }
+
+    public void setReport(Report report) {
+        this.report = report;
+    }
+
+    public Boolean getReportCreated() {
+        return reportCreated;
+    }
+
+    public void setReportCreated(Boolean reportCreated) {
+        this.reportCreated = reportCreated;
     }
 }
