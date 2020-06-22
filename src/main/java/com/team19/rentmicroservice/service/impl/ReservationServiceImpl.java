@@ -5,17 +5,21 @@ import com.rent_a_car.rent_service.soap.AddReservationResponse;
 import com.team19.rentmicroservice.client.AdClient;
 import com.team19.rentmicroservice.dto.*;
 import com.team19.rentmicroservice.enums.RequestStatus;
+import com.team19.rentmicroservice.model.Message;
 import com.team19.rentmicroservice.model.Request;
 import com.team19.rentmicroservice.model.RequestAd;
 import com.team19.rentmicroservice.model.Reservation;
 import com.team19.rentmicroservice.repository.ReservationRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
 import com.team19.rentmicroservice.service.ReservationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -35,12 +39,18 @@ public class ReservationServiceImpl implements ReservationService {
     @Autowired
     private RequestServiceImpl requestService;
 
+    Logger logger = LoggerFactory.getLogger(ReservationServiceImpl.class);
+
     @Override
     public Reservation createNewReservation(ReservationDTO reservation, Long ownerID) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
+        logger.debug("AS-call-S:AR"); //Ad service call start, AR=Ad retrieving
         AdDTOSimple ad = this.adClient.getAd(reservation.getAdId(),cp.getPermissions(),cp.getUserID(),cp.getToken());
+        logger.debug("AS-call-E:AR"); //Ad service call end, AR=Ad retrieving
+
 
         if (ad != null)
         {
@@ -123,12 +133,14 @@ public class ReservationServiceImpl implements ReservationService {
             newReservation.setPayment(payment);
 
             newReservation = reservationRepository.save(newReservation);
+            logger.info(MessageFormat.format("RS-ID:{0}-created;UserID:{1}", newReservation.getId(), cp.getUserID())); //RS-reservation
 
             //automatski se odbiju svi zahtevi koji su Pending i koji se poklapaju sa ovim terminom
             List<Request> requests = requestService.findPendingRequests(reservation.getAdId(),reservation.getStartDate(),reservation.getEndDate());
             if(requests.size() != 0) {
                 for (Request r : requests) {
                     r.setStatus(RequestStatus.Canceled);
+                    logger.info(MessageFormat.format("R-ID:{0}-canceled;UserID:{1}",r.getId(),cp.getUserID()));
                     //mozda ovde poslati mejlove da im je odbijen zahtev
                 }
                 requestService.saveAll(requests);
@@ -227,6 +239,7 @@ public class ReservationServiceImpl implements ReservationService {
             newReservation.setPayment(arr.getPayment());
             newReservation.setReportCreated(false);
             newReservation = this.reservationRepository.save(newReservation);
+            logger.info(MessageFormat.format("RS-ID:{0}-created from agent;UserID:{1}",newReservation.getId(),cp.getUserID()));
 
             //automatski se odbiju svi zahtevi koji su Pending i koji se poklapaju sa ovim terminom
             List<Request> requests = requestService.findPendingRequests(arr.getAdMainId(),LocalDate.parse(arr.getStartDate()),LocalDate.parse(arr.getEndDate()));
@@ -235,6 +248,7 @@ public class ReservationServiceImpl implements ReservationService {
                 for (Request r : requests) {
                     r.setStatus(RequestStatus.Canceled);
                     canceledRequests.add(r.getId());
+                    logger.info(MessageFormat.format("R-ID:{0}-canceled;UserID:{1}", r.getId(), cp.getUserID()));
                     //mozda ovde poslati mejlove da im je odbijen zahtev
                 }
                 requestService.saveAll(requests);
@@ -246,6 +260,7 @@ public class ReservationServiceImpl implements ReservationService {
             return addReservationResponse;
 
         }else {
+            logger.warn(MessageFormat.format("NRS from agent failed: adID {0} not found;UserID:{1}",arr.getAdMainId(), cp.getUserID())); //NRS=New reservation
             AddReservationResponse addReservationResponse = new AddReservationResponse();
             addReservationResponse.setSuccess(false);
             return addReservationResponse;

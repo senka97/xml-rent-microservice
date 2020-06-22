@@ -7,7 +7,7 @@
               class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
             <Pattern>
-                %d{dd-MM-yyyy HH:mm:ss.SSS} %highlight(%-5level) %magenta([%thread]) %logger{36} - %msg%n
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) %magenta([%thread]) %logger{36} - %msg%n
             </Pattern>
         </layout>
     </appender>
@@ -40,7 +40,7 @@
 
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <Pattern>
-                %d{dd-MM-yyyy HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
             </Pattern>
         </encoder>
 
@@ -83,7 +83,7 @@
 
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <Pattern>
-                %d{dd-MM-yyyy HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
             </Pattern>
         </encoder>
 
@@ -126,7 +126,7 @@
 
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <Pattern>
-                %d{dd-MM-yyyy HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
             </Pattern>
         </encoder>
 

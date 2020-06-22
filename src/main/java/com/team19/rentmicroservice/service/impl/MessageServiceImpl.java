@@ -11,6 +11,8 @@ import com.team19.rentmicroservice.model.UserInfo;
 import com.team19.rentmicroservice.repository.MessageRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
 import com.team19.rentmicroservice.service.MessageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +38,8 @@ public class MessageServiceImpl implements MessageService {
     @Autowired
     private UserClient userClient;
 
+    Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);
+
     @Override
     public List<MessageResponseDTO> findMessagesForRequest(Long id) {
 
@@ -49,28 +54,36 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public ResponseEntity<?> validateMessageRequest(MessageRequestDTO messageRequestDTO) {
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
         boolean valid = true;
         String msg = "";
+        String logMsg = "";
         if(messageRequestDTO.getRequestId() <= 0){
             msg += "Request id has to be positive long number.";
             valid = false;
+            logMsg += "RID-inv "; //Request id invalid
         }
         if(messageRequestDTO.getContent() == null || messageRequestDTO.getContent().equals("")){
             msg += "Message content is mandatory.";
             valid = false;
+            logMsg += "MC-miss "; //messages content missing
         }
         if(!valid){
+            logger.warn(MessageFormat.format("MsgR-invalid:{0};UserID:{1}",logMsg, cp.getUserID())); //msgR=messageRequest
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(msg);
         }
         Request request = this.requestService.findOne(messageRequestDTO.getRequestId());
         if(request == null){
+            logger.warn(MessageFormat.format("MsgR-invalid:R-ID {0} not found;UserID:{1}", messageRequestDTO.getRequestId(), cp.getUserID())); //msgR=messageRequest, R-ID=request id
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request with that id doesn't exist in the system.");
         }
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
         //proverim da li je ulogovani korisnik vlasnik ili klijent u zahtevu
         if(Long.parseLong(cp.getUserID()) != request.getClientID() && Long.parseLong(cp.getUserID()) != request.getOwnerID()){
+            logger.warn(MessageFormat.format("MsgR-invalid:R-ID {0} not from user;UserID:{1}", messageRequestDTO.getRequestId(), cp.getUserID())); //msgR=messageRequest, R-ID=request id
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to send messages for this request.");
         }
 
@@ -86,7 +99,9 @@ public class MessageServiceImpl implements MessageService {
         UserInfo userInfo = userInfoService.findUserInfoByUserId(Long.parseLong(cp.getUserID()));
         //ako se korisnik ne nalazi ovde u bazi, dovucem ga iz user servisa i sacuvam ovde
         if(userInfo == null){
+            logger.debug("US-call-S:RUI:" + cp.getUserID()); //User service call start, RUI - retrieving user info
             UserInfoDTO userInfoDTO = this.userClient.getUserInfo(Long.parseLong(cp.getUserID()),cp.getToken());
+            logger.debug("US-call-E:RUI:" + cp.getUserID()); //User service call end, RUI - retrieving user info
             userInfo = new UserInfo(userInfoDTO);
             userInfo = this.userInfoService.saveUserInfo(userInfo);
         }
@@ -145,7 +160,9 @@ public class MessageServiceImpl implements MessageService {
         UserInfo userInfo = userInfoService.findUserInfoByUserId(Long.parseLong(cp.getUserID()));
         //ako se korisnik ne nalazi ovde u bazi, dovucem ga iz user servisa i sacuvam ovde
         if(userInfo == null){
+            logger.debug("US-call-S:RUI:" + cp.getUserID()); //User service call start, RUI - retrieving user info
             UserInfoDTO userInfoDTO = this.userClient.getUserInfo(Long.parseLong(cp.getUserID()),cp.getToken());
+            logger.debug("US-call-E:RUI:" + cp.getUserID()); //User service call end, RUI - retrieving user info
             userInfo = new UserInfo(userInfoDTO);
             userInfo = this.userInfoService.saveUserInfo(userInfo);
         }
@@ -154,6 +171,7 @@ public class MessageServiceImpl implements MessageService {
 
         //ako zahtev ne postoji vraca se kao neuspeh
         if(request == null){
+            logger.warn(MessageFormat.format("R-ID:{0}-from agent NF;UserID:{1}", amr.getMainIdRequest(), cp.getUserID())); //R-ID=request id, NF-not found
             AddMessageResponse amResponse = new AddMessageResponse();
             amResponse.setSuccess(false);
             MessageResponseSOAP mrs = new MessageResponseSOAP();
@@ -163,6 +181,7 @@ public class MessageServiceImpl implements MessageService {
 
         Message message = new Message(amr.getContent(), LocalDateTime.now(),userInfo,request);
         message = messageRepository.save(message);
+        logger.info(MessageFormat.format("Msg-ID:{0}-from agent added;UserID:{1}", message.getId()), cp.getUserID()); //msg-ID=message id
 
         MessageResponseSOAP mrs = new MessageResponseSOAP();
         mrs.setMainId(message.getId());
