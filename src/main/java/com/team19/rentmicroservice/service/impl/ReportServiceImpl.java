@@ -10,6 +10,8 @@ import com.team19.rentmicroservice.security.CustomPrincipal;
 import com.team19.rentmicroservice.service.ReportService;
 import com.team19.rentmicroservice.service.RequestAdService;
 import com.team19.rentmicroservice.service.ReservationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,35 +34,54 @@ public class ReportServiceImpl implements ReportService {
     @Autowired
     private AdClient adClient;
 
+    Logger logger = LoggerFactory.getLogger(ReportService.class);
+
     @Override
     @Transactional
     public Boolean createRequestReport(Long requestAdId, String content, double km) {
 
         RequestAd requestAd = requestAdService.findById(requestAdId);
 
-        if(requestAd != null && !requestAd.getReportCreated())
+        if(requestAd != null)
         {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
-
-            if (this.adClient.changeMileageAfterReport(requestAd.getAdID(), km, cp.getPermissions(), cp.getUserID(), cp.getToken()))
+            if(!requestAd.getReportCreated())
             {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
 
-                Report r = new Report();
-                r.setContent(content);
-                r.setKm(km);
-                r.setRequestAd(requestAd);
-                r.setReservation(null);
-                requestAd.setReportCreated(true);
+                if (this.adClient.changeMileageAfterReport(requestAd.getAdID(), km, cp.getPermissions(), cp.getUserID(), cp.getToken()))
+                {
+                    logger.info("Car mileage changed for " + km + "km");
+                    Report r = new Report();
+                    r.setContent(content);
+                    r.setKm(km);
+                    r.setRequestAd(requestAd);
+                    r.setReservation(null);
+                    requestAd.setReportCreated(true);
 
-                requestAdService.save(requestAd);
-                reportRepository.save(r);
-                return true;
+                    requestAdService.save(requestAd);
+                    reportRepository.save(r);
+                    return true;
 
+                }
+                else
+                {
+                    logger.error("Changing car mileage failed");
+                    return false;
+                }
             }
-            else return false;
+            else
+            {
+                logger.error("RequestAd id: "+ requestAdId + " already has report");
+                return false;
+            }
         }
-        else return false;
+        else{
+
+            logger.error("RequestAd id: "+ requestAdId + " not found");
+            return false;
+        }
+
     }
 
     @Override
@@ -69,27 +90,44 @@ public class ReportServiceImpl implements ReportService {
 
         Reservation reservation = reservationService.findById(reservationId);
 
-        if(reservation != null && !reservation.getReportCreated())
+        if(reservation != null)
         {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
-
-            if(this.adClient.changeMileageAfterReport(reservation.getAdID(), km, cp.getPermissions(), cp.getUserID(), cp.getToken()))
+            if(!reservation.getReportCreated())
             {
-                Report r = new Report();
-                r.setContent(content);
-                r.setKm(km);
-                r.setRequestAd(null);
-                r.setReservation(reservation);
-                reservation.setReportCreated(true);
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
 
-                reservationService.save(reservation);
-                reportRepository.save(r);
-                return true;
+                if(this.adClient.changeMileageAfterReport(reservation.getAdID(), km, cp.getPermissions(), cp.getUserID(), cp.getToken()))
+                {
+                    logger.info("Car mileage changed for " + km + "km");
+                    Report r = new Report();
+                    r.setContent(content);
+                    r.setKm(km);
+                    r.setRequestAd(null);
+                    r.setReservation(reservation);
+                    reservation.setReportCreated(true);
+
+                    reservationService.save(reservation);
+                    reportRepository.save(r);
+                    return true;
+                }
+                else
+                {
+                    logger.error("Changing car mileage failed");
+                    return false;
+                }
             }
-            else return false;
+            else
+            {
+                logger.error("Reservation id: "+ reservationId + " already has report");
+                return false;
+            }
         }
-        else return false;
+        else
+        {
+            logger.error("Reservation id: "+ reservationId + " not found");
+            return false;
+        }
     }
 
     @Override
@@ -106,7 +144,11 @@ public class ReportServiceImpl implements ReportService {
 
             return r;
         }
-        else return null;
+        else
+        {
+            logger.warn("Report with id "+ id + " not found");
+            return null;
+        }
     }
 
     @Override
@@ -123,7 +165,11 @@ public class ReportServiceImpl implements ReportService {
 
             return r;
         }
-        else return null;
+        else
+        {
+            logger.warn("Report with id "+ id + " not found");
+            return null;
+        }
 
     }
 }

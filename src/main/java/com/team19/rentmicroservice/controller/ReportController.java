@@ -2,6 +2,8 @@ package com.team19.rentmicroservice.controller;
 
 import com.team19.rentmicroservice.dto.ReportDTO;
 import com.team19.rentmicroservice.service.ReportService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,14 +18,39 @@ public class ReportController {
     @Autowired
     private ReportService reportService;
 
+    Logger logger = LoggerFactory.getLogger(ReportController.class);
+
     @PostMapping(value = "/request",consumes = "application/json")
     @PreAuthorize("hasAuthority('report_create')")
     public ResponseEntity<?> createRequestReport(@RequestBody ReportDTO report){
 
-        if(this.reportService.createRequestReport(report.getRequestAdId(), report.getContent(), report.getKm())){
-            return new ResponseEntity("Report successfully created",HttpStatus.CREATED);
+        if(report.getRequestAdId()<0)
+        {
+            logger.error("BR - RequestAd id can't be negative number");
+            return new ResponseEntity<>("Id can't be negative number", HttpStatus.BAD_REQUEST);
         }
-        else return new ResponseEntity<>("Request not found", HttpStatus.BAD_REQUEST);
+
+        if(report.getKm() < 0)
+        {
+            logger.error("BR - Number of km must be greater than 0");
+            return new ResponseEntity<>("Number of km must be greater than 0 ", HttpStatus.BAD_REQUEST);
+        }
+
+        if(report.getContent() == null || report.getContent().equals(""))
+        {
+            logger.error("BR - Report content is mandatory");
+            return new ResponseEntity<>("Report content is mandatory", HttpStatus.BAD_REQUEST);
+        }
+
+        if(this.reportService.createRequestReport(report.getRequestAdId(), report.getContent(), report.getKm())){
+            logger.info("Creating report - Report for request id: " + report.getRequestAdId() + " created");
+            return new ResponseEntity("Report successfully created", HttpStatus.CREATED);
+        }
+        else
+        {
+            logger.info("Creating report - Report for request id: " + report.getRequestAdId() + " couldn't be created");
+            return new ResponseEntity<>("Error creating report", HttpStatus.BAD_REQUEST);
+        }
 
     }
 
@@ -31,11 +58,34 @@ public class ReportController {
     @PreAuthorize("hasAuthority('report_create')")
     public ResponseEntity<?> createReservationReport(@RequestBody ReportDTO report){
 
+        if(report.getReservationId() < 0)
+        {
+            logger.error("BR - Reservation id can't be negative number");
+            return new ResponseEntity<>("Id can't be negative number", HttpStatus.BAD_REQUEST);
+        }
+
+        if(report.getKm() <= 0)
+        {
+            logger.error("BR - Number of km must be greater than 0");
+            return new ResponseEntity<>("Number of km must be greater than 0", HttpStatus.BAD_REQUEST);
+        }
+
+        if(report.getContent() == null || report.getContent().equals(""))
+        {
+            logger.error("BR - Report content is mandatory");
+            return new ResponseEntity<>("Report content is mandatory", HttpStatus.BAD_REQUEST);
+        }
+
         if(this.reportService.createReservationReport(report.getReservationId(), report.getContent(), report.getKm()))
         {
+            logger.info("Creating report - Report for reservation id: " + report.getReservationId() + " created");
             return new ResponseEntity("Report successfully created", HttpStatus.CREATED);
         }
-        else return new ResponseEntity<>("Reservation not found", HttpStatus.BAD_REQUEST);
+        else
+        {
+            logger.info("Creating report - Report for reservation id: " + report.getReservationId() + " couldn't be created");
+            return new ResponseEntity<>("Error creating report", HttpStatus.BAD_REQUEST);
+        }
 
     }
 
