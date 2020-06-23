@@ -9,6 +9,8 @@ import com.team19.rentmicroservice.repository.CartItemRepository;
 import com.team19.rentmicroservice.repository.CartRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
 import com.team19.rentmicroservice.service.CartService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +37,8 @@ public class CartServiceImpl implements CartService {
     @Autowired
     private ReservationServiceImpl reservationService;
 
+    Logger logger = LoggerFactory.getLogger(CartServiceImpl.class);
+
 
     @Override
     public List<CartItemDTO> getCart() {
@@ -49,7 +54,10 @@ public class CartServiceImpl implements CartService {
                     cartItemDTOs.add(new CartItemDTO(cartItem.getId(),cartItem.getStartDate(),cartItem.getEndDate(), cartItem.getAdID()));
                 }
             }
+
+            logger.debug("AS-call-S:FA"); //Ad service call start, FA=fill ads
             cartItemDTOs = adClient.findAds(cartItemDTOs,cp.getPermissions(),cp.getUserID(),cp.getToken());
+            logger.debug("AS-call-E:FA"); //Ad service call end, FA=fill ads
             return cartItemDTOs;
         }
     }
@@ -63,6 +71,7 @@ public class CartServiceImpl implements CartService {
         //proverim da li postoji cart da ulogovanu osobu
         if(cart == null){
             //return "This user doesn't have a cart and can't make requests.";
+            logger.warn(MessageFormat.format("Cart-inv-udhc;UserID:{0}", cp.getUserID())); //Cart invalid, user doesn't have cart
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("This user doesn't have a cart and can't make requests.");
         }
 
@@ -70,6 +79,7 @@ public class CartServiceImpl implements CartService {
         for(Long cartItemId: cartItemsIDs){
             if(!cart.getCartItems().stream().filter(ci -> ci.getId() == cartItemId && ci.isInCart()).findFirst().isPresent()){
                 //return "Invalid cart items. This user doesn't have these cart items in his/her cart.";
+                logger.warn(MessageFormat.format("Cart-inv-cinf;UserID:{0}", cp.getUserID())); //Cart invalid, cart items not found
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid cart items. This user doesn't have these cart items in his/her cart.");
             }
         }

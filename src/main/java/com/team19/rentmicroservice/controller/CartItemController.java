@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.MessageFormat;
 import java.time.format.DateTimeFormatter;
 
 @RestController
@@ -34,28 +35,27 @@ public class CartItemController {
     @PreAuthorize("hasAuthority('cartItem_insert')")
     public ResponseEntity<?> addCartItem(@RequestBody CartItemRequestDTO cartItemRequestDTO){
 
-        //logger.debug("Start adding a new cart item.");
-        //logger.info("Adding a new cart item...");
-        //logger.error("Error occured.");
-        //logger.warn("Warn");
-        //logger.trace("End adding a new cart item.");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
 
         String msg = cartItemService.validateCartItemRequest(cartItemRequestDTO);
         if(msg != null){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(msg);
         }
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
         //proveri se da li takav oglas postoji u ad-service i vrati se id vlasnika oglasa i kada je oglas aktivan
         AdOwnerDTO adOwnerDTO = adClient.getAdOwner(cartItemRequestDTO.getAdID(),cp.getPermissions(),cp.getUserID(),cp.getToken());
         if(adOwnerDTO == null){
+            logger.warn(MessageFormat.format("AdID:{0}-not found;UserID:{1}", cartItemRequestDTO.getAdID(), cp.getUserID()));
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("This ad doesn't exist.");
         }else{
             //ako oglas postoji proveri se da li je klijent isti kao i vlasnik oglasa
             if(adOwnerDTO.getOwnerID() == Long.parseLong(cp.getUserID())){
+                logger.warn(MessageFormat.format("AdID:{0}-not user's ad;UserID:{1}", cartItemRequestDTO.getAdID(), cp.getUserID()));
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can't add your own ad in your cart.");
             }else{ //ako klijent nije isti kao vlasnik proveri da li je oglas aktivan u tom periodu
                 if(cartItemRequestDTO.getStartDate().isBefore(adOwnerDTO.getStartDate()) || cartItemRequestDTO.getEndDate().isAfter(adOwnerDTO.getEndDate())){
+                    logger.warn(MessageFormat.format("AdID:{0}-not active;UserID:{1}", cartItemRequestDTO.getAdID(), cp.getUserID()));
                     String startDateFormatted = cartItemRequestDTO.getStartDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
                     String endDateFormatted = cartItemRequestDTO.getEndDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This ad is not active for the last searched dates: " + startDateFormatted + " to " + endDateFormatted + ".");
@@ -64,8 +64,10 @@ public class CartItemController {
         }
         CartItemResponseDTO cartItemResponseDTO = cartItemService.addCartItem(cartItemRequestDTO, adOwnerDTO.getOwnerID());
         if(cartItemResponseDTO == null){
+            logger.warn(MessageFormat.format("AdID:{0}-already in the cart;UserID:{1}", cartItemRequestDTO.getAdID(), cp.getUserID()));
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This ad for this period is already in the cart.");
         }
+        logger.info(MessageFormat.format("CI-ID:{0}-created;UserID:{1}", cartItemResponseDTO.getId(), cp.getUserID())); //CI-Cart item
         return new ResponseEntity(cartItemResponseDTO, HttpStatus.CREATED);
     }
 
@@ -73,10 +75,14 @@ public class CartItemController {
     @PreAuthorize("hasAuthority('cartItem_delete')")
     public ResponseEntity<?> deleteCartItem(@PathVariable Long id){
 
+         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+         CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
          boolean deleted = cartItemService.deleteCartItem(id);
          if(deleted){
+             logger.info(MessageFormat.format("CI-ID:{0}-deleted;UserID:{1}", id, cp.getUserID())); //CI-Cart item
              return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
          }else{
+             logger.warn(MessageFormat.format("CI-ID:{0}-not found;UserID:{1}", id, cp.getUserID()));
              return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cart item doesn't exist.");
          }
     }

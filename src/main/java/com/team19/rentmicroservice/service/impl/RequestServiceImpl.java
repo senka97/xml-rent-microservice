@@ -5,15 +5,14 @@ import com.team19.rentmicroservice.client.AdClient;
 import com.team19.rentmicroservice.client.UserClient;
 import com.team19.rentmicroservice.dto.*;
 import com.team19.rentmicroservice.enums.RequestStatus;
-import com.team19.rentmicroservice.model.CartItem;
-import com.team19.rentmicroservice.model.Request;
-import com.team19.rentmicroservice.model.RequestAd;
-import com.team19.rentmicroservice.model.UserInfo;
+import com.team19.rentmicroservice.model.*;
 import com.team19.rentmicroservice.repository.CartItemRepository;
 import com.team19.rentmicroservice.repository.RequestAdRepository;
 import com.team19.rentmicroservice.repository.RequestRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
 import com.team19.rentmicroservice.service.RequestService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
@@ -23,6 +22,7 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -42,13 +42,13 @@ public class RequestServiceImpl implements RequestService {
     @Autowired
     private AdClient adClient;
     @Autowired
-    private RequestAdRepository requestAdRepository;
-    @Autowired
     private ReservationServiceImpl reservationService;
     @Autowired
     private RequestAdServiceImpl requestAdService;
     @Autowired
     private UserClient userClient;
+
+    Logger logger = LoggerFactory.getLogger(RequestServiceImpl.class);
 
 
     @Override
@@ -69,7 +69,9 @@ public class RequestServiceImpl implements RequestService {
             }
         }
         //dobavim cene za sve pojedinacne zahteve za oglase
+        logger.debug("AS-call-S: FP"); //Ad service call start, finding prices
         priceListAdDTOs = adClient.findPrices(priceListAdDTOs,cp.getPermissions(),cp.getUserID(),cp.getToken());
+        logger.debug("AS-call-E: FP"); //Ad service call end, finding prices
         //popunim zahteve cenama
         for(RequestAd requestAd: requestAds){
             PriceListAdDTO pl = priceListAdDTOs.stream().filter(p -> p.getAdID() == requestAd.getAdID()).findFirst().orElse(null);
@@ -197,6 +199,7 @@ public class RequestServiceImpl implements RequestService {
             if(requests.size()!=0) {
                 for (Request r : requests) {
                     r.setStatus(RequestStatus.Canceled);
+                    logger.info(MessageFormat.format("R-ID:{0}-rejected;UserID:{1}", r.getId(), cp.getUserID())); //R-ID:Request id
                 }
                 requestRepository.saveAll(requests);
                 //ovde bi trebalo poslati mejl da su zahtevi odbijeni
@@ -307,7 +310,9 @@ public class RequestServiceImpl implements RequestService {
             }
         }
         //popunila sam informacijama za zahtev i napravila listu klijenata i oglasa cije informacije moram da dobavim
+        logger.debug("US-call-S:FC"); //User service call start, FC=fill clients
         clientFrontDTOs = userClient.fillClients(clientFrontDTOs, cp.getToken());
+        logger.debug("US-call-E:FC"); //User service call end, FC=fill clients
         //popunim informacijama o klijentima
         for(RequestFrontDTO r: requestFrontDTOs){
             ClientFrontDTO client = clientFrontDTOs.stream().filter(c -> c.getId() == r.getClientID()).findFirst().orElse(null);
@@ -315,7 +320,9 @@ public class RequestServiceImpl implements RequestService {
             r.setClientName(client.getName());
         }
         //kad sam popunila podacima o klijentu, saljem u ad-microservice da se popune podaci o oglasu
+        logger.debug("AS-call-S:FA"); //Ad service call start, FA=fill ads
         List<AdFrontDTO> adFrontDTOs = adClient.fillAdsWithInformation(adIDs,cp.getPermissions(),cp.getUserID(),cp.getToken());
+        logger.debug("AS-call-E:FA"); //Ad service call end, FA=fill ads
 
         //popunim podacima o oglasu
         for(RequestFrontDTO r: requestFrontDTOs){
@@ -364,15 +371,18 @@ public class RequestServiceImpl implements RequestService {
     public void rejectPendingRequestsAfter24() {
 
            System.out.println("Odbijanje zahteva");
+           logger.info("R-rejecting(24h) start"); //Requests rejecting start
            List<Request> requests = this.requestRepository.findPendingRequestsAfter24(LocalDateTime.now().minusDays(1));
            System.out.println("Broj zahteva koje treba odbiti: " + requests.size());
            if(requests.size()>0){
                for(Request r: requests){
                    r.setStatus(RequestStatus.Canceled);
+                   logger.info(MessageFormat.format("R-ID:{0}-rejected", r.getId()));
                    //posaljem mejl da je odbijen zahtev
                }
                this.requestRepository.saveAll(requests);
            }
+          logger.info("R-rejecting(24h) end"); //Request rejecting end
     }
 
 
@@ -435,8 +445,13 @@ public class RequestServiceImpl implements RequestService {
     @Override
     public RejectPendingRResponse rejectPendingRequestFromAgentApp(RejectPendingRRequest rpr) {
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+        logger.debug(MessageFormat.format("R-ID:{0} for rejecting from agent", rpr.getIdMain()));
+
         Request r = this.requestRepository.findById(rpr.getIdMain()).orElse(null);
         if(r == null){
+            logger.warn(MessageFormat.format("R-ID:{0}-NF from agent;UserID:{1}", rpr.getIdMain(), cp.getUserID())); //NF=not found
             RejectPendingRResponse rpResponse = new RejectPendingRResponse();
             rpResponse.setSuccess(false);
             rpResponse.setMessage("Request with that id doesn't exist in the main app. Please contact technical support.");
@@ -444,6 +459,7 @@ public class RequestServiceImpl implements RequestService {
         }else{
             r.setStatus(RequestStatus.Canceled);
             this.requestRepository.save(r);
+            logger.info(MessageFormat.format("R-ID:{0}-rejected from agent;UserID:{1}", rpr.getIdMain(), cp.getUserID()));
             RejectPendingRResponse rpResponse = new RejectPendingRResponse();
             rpResponse.setSuccess(true);
             rpResponse.setMessage("Request successfully rejected in the main app.");
@@ -455,9 +471,16 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional //isto zbog lazy loading Request.requestAds
     public AcceptPendingRResponse acceptPendingRequestFromAgentApp(AcceptPendingRRequest apr) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
         Request request = this.requestRepository.findById(apr.getIdMain()).orElse(null);
         System.out.println("Zahtev koji se prihvata: " + apr.getIdMain());
+        logger.debug(MessageFormat.format("R-ID:{0} for accepting from agent", apr.getIdMain()));
+
         if(request == null){
+            logger.warn(MessageFormat.format("R-ID:{0}-NF from agent;UserID:{1}", apr.getIdMain(), cp.getUserID())); //NF=not found
             AcceptPendingRResponse apResponse = new AcceptPendingRResponse();
             apResponse.setSuccess(false);
             apResponse.setMessage("Request with that id doesn't exist in the main app. Please contact technical support.");
@@ -467,6 +490,7 @@ public class RequestServiceImpl implements RequestService {
             //proverim da li ga je mozda neko otkazao u medjuvremenu
             if(request.getStatus().toString() == "Canceled"){
                 System.out.println("Zahtev koji se prihvata je otkazan.");
+                logger.info(MessageFormat.format("R-ID:{0}-AC;UserID:{1}", apr.getIdMain(), cp.getUserID())); //AC=already canceled
                 AcceptPendingRResponse apResponse = new AcceptPendingRResponse();
                 apResponse.setSuccess(false);
                 apResponse.setMessage("Request with that id has been canceled.");
@@ -476,10 +500,9 @@ public class RequestServiceImpl implements RequestService {
             //ako nije onda ga prihvatim
             request.setStatus(RequestStatus.Paid);
             requestRepository.save(request);
+            logger.info(MessageFormat.format("R-ID:{0}-accepted from agent;UserID:{1}", apr.getIdMain(), cp.getUserID()));
 
             // omogucavanje postavljanja komentara i ocenjivanje za svaki zahtev
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
             for(RequestAd ra: request.getRequestAds())
             {
                 this.adClient.createUserCanPostComment(ra.getAdID(), ra.getClientID(), ra.getEndDate().toString() ,cp.getPermissions(),cp.getUserID(),cp.getToken());
@@ -497,6 +520,7 @@ public class RequestServiceImpl implements RequestService {
                     for (Request r : requests) {
                         r.setStatus(RequestStatus.Canceled);
                         canceledRequest.add(r.getId());
+                        logger.info(MessageFormat.format("R-ID:{0}-canceled;UserID:{1}", r.getId(),cp.getUserID()));
                     }
                     requestRepository.saveAll(requests);
                     //ovde bi trebalo poslati mejl da su zahtevi odbijeni
