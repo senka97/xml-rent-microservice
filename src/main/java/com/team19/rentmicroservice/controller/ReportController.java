@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+
 @RestController
 @RequestMapping(value = "/api/reports", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ReportController {
@@ -22,25 +24,23 @@ public class ReportController {
 
     @PostMapping(value = "/request",consumes = "application/json")
     @PreAuthorize("hasAuthority('report_create')")
-    public ResponseEntity<?> createRequestReport(@RequestBody ReportDTO report){
+    public ResponseEntity<?> createRequestReport(@Valid @RequestBody ReportDTO report){
 
-        if(report.getRequestAdId()<0)
+        if(report.getRequestAdId() != null)
         {
-            logger.error("BR - RequestAd id can't be negative number");
-            return new ResponseEntity<>("Id can't be negative number", HttpStatus.BAD_REQUEST);
+            if(report.getRequestAdId() < 0)
+            {
+                logger.error("BR - RequestAd id can't be negative number");
+                return new ResponseEntity<>("Id can't be negative number", HttpStatus.BAD_REQUEST);
+            }
+
+        }
+        else
+        {
+            logger.error("BR - RequestAd id can't be null");
+            return new ResponseEntity<>("Id can't be null", HttpStatus.BAD_REQUEST);
         }
 
-        if(report.getKm() < 0)
-        {
-            logger.error("BR - Number of km must be greater than 0");
-            return new ResponseEntity<>("Number of km must be greater than 0 ", HttpStatus.BAD_REQUEST);
-        }
-
-        if(report.getContent() == null || report.getContent().equals(""))
-        {
-            logger.error("BR - Report content is mandatory");
-            return new ResponseEntity<>("Report content is mandatory", HttpStatus.BAD_REQUEST);
-        }
 
         if(this.reportService.createRequestReport(report.getRequestAdId(), report.getContent(), report.getKm())){
             logger.info("Creating report - Report for request id: " + report.getRequestAdId() + " created");
@@ -56,25 +56,23 @@ public class ReportController {
 
     @PostMapping(value = "/reservation",consumes = "application/json")
     @PreAuthorize("hasAuthority('report_create')")
-    public ResponseEntity<?> createReservationReport(@RequestBody ReportDTO report){
+    public ResponseEntity<?> createReservationReport(@Valid @RequestBody ReportDTO report){
 
-        if(report.getReservationId() < 0)
+        if(report.getReservationId() != null)
         {
-            logger.error("BR - Reservation id can't be negative number");
-            return new ResponseEntity<>("Id can't be negative number", HttpStatus.BAD_REQUEST);
+            if(report.getReservationId() < 0)
+            {
+                logger.error("BR - Reservation id can't be negative number");
+                return new ResponseEntity<>("Id can't be negative number", HttpStatus.BAD_REQUEST);
+            }
+
+        }
+        else
+        {
+            logger.error("BR - Reservation id can't be null");
+            return new ResponseEntity<>("Id can't be null", HttpStatus.BAD_REQUEST);
         }
 
-        if(report.getKm() <= 0)
-        {
-            logger.error("BR - Number of km must be greater than 0");
-            return new ResponseEntity<>("Number of km must be greater than 0", HttpStatus.BAD_REQUEST);
-        }
-
-        if(report.getContent() == null || report.getContent().equals(""))
-        {
-            logger.error("BR - Report content is mandatory");
-            return new ResponseEntity<>("Report content is mandatory", HttpStatus.BAD_REQUEST);
-        }
 
         if(this.reportService.createReservationReport(report.getReservationId(), report.getContent(), report.getKm()))
         {
