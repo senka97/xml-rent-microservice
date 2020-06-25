@@ -8,7 +8,7 @@ public class ReportDTO {
 
     @NotEmpty(message="Content must not be null or empty.")
     @Size(min=2, message = "Content length must be 2 characters minimum")
-    @Pattern(regexp="^[a-zA-Z0-9?'!,:;. ]*$", message="Content must not include special characters.")
+    @Pattern(regexp="^[a-zA-Z0-9.,?! ]*$", message="Content must not include special characters.")
     private String content;
 
     @NotNull(message = "Number of km must not be null")

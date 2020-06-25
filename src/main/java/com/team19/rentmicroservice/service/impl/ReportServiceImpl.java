@@ -51,7 +51,7 @@ public class ReportServiceImpl implements ReportService {
 
                 if (this.adClient.changeMileageAfterReport(requestAd.getAdID(), km, cp.getPermissions(), cp.getUserID(), cp.getToken()))
                 {
-                    logger.info("Car mileage changed for " + km + "km");
+                    logger.info("Creating report-Car mileage changed for " + km + "km");
                     Report r = new Report();
                     r.setContent(content);
                     r.setKm(km);
@@ -66,19 +66,19 @@ public class ReportServiceImpl implements ReportService {
                 }
                 else
                 {
-                    logger.error("Changing car mileage failed");
+                    logger.error("Creating report-Changing car mileage failed");
                     return false;
                 }
             }
             else
             {
-                logger.error("RequestAd id: "+ requestAdId + " already has report");
+                logger.error("Creating report-RequestAdID: "+ requestAdId + " already has report");
                 return false;
             }
         }
         else{
 
-            logger.error("RequestAd id: "+ requestAdId + " not found");
+            logger.error("Creating report-RequestAdID: "+ requestAdId + " not found");
             return false;
         }
 
@@ -99,7 +99,7 @@ public class ReportServiceImpl implements ReportService {
 
                 if(this.adClient.changeMileageAfterReport(reservation.getAdID(), km, cp.getPermissions(), cp.getUserID(), cp.getToken()))
                 {
-                    logger.info("Car mileage changed for " + km + "km");
+                    logger.info("Creating report-Car mileage changed for " + km + "km");
                     Report r = new Report();
                     r.setContent(content);
                     r.setKm(km);
@@ -113,19 +113,19 @@ public class ReportServiceImpl implements ReportService {
                 }
                 else
                 {
-                    logger.error("Changing car mileage failed");
+                    logger.error("Creating report-Changing car mileage failed");
                     return false;
                 }
             }
             else
             {
-                logger.error("Reservation id: "+ reservationId + " already has report");
+                logger.error("Creating report-ReservationID: "+ reservationId + " already has report");
                 return false;
             }
         }
         else
         {
-            logger.error("Reservation id: "+ reservationId + " not found");
+            logger.error("Creating report-ReservationID: "+ reservationId + " not found");
             return false;
         }
     }
@@ -146,7 +146,7 @@ public class ReportServiceImpl implements ReportService {
         }
         else
         {
-            logger.warn("Report with id "+ id + " not found");
+            logger.warn("Show report-ReportID "+ id + " not found");
             return null;
         }
     }
@@ -167,7 +167,7 @@ public class ReportServiceImpl implements ReportService {
         }
         else
         {
-            logger.warn("Report with id "+ id + " not found");
+            logger.warn("Show report-ReportID "+ id + " not found");
             return null;
         }
 

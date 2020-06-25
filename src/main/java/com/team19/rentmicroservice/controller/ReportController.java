@@ -30,25 +30,25 @@ public class ReportController {
         {
             if(report.getRequestAdId() < 0)
             {
-                logger.error("BR - RequestAd id can't be negative number");
+                logger.error("BR - RequestAdID can't be negative number");
                 return new ResponseEntity<>("Id can't be negative number", HttpStatus.BAD_REQUEST);
             }
 
         }
         else
         {
-            logger.error("BR - RequestAd id can't be null");
+            logger.error("BR - RequestAdID can't be null");
             return new ResponseEntity<>("Id can't be null", HttpStatus.BAD_REQUEST);
         }
 
 
         if(this.reportService.createRequestReport(report.getRequestAdId(), report.getContent(), report.getKm())){
-            logger.info("Creating report - Report for request id: " + report.getRequestAdId() + " created");
+            logger.info("Creating report-For requestAdID: " + report.getRequestAdId() + " created");
             return new ResponseEntity("Report successfully created", HttpStatus.CREATED);
         }
         else
         {
-            logger.info("Creating report - Report for request id: " + report.getRequestAdId() + " couldn't be created");
+            logger.info("Creating report-For requestAdID: " + report.getRequestAdId() + " couldn't be created");
             return new ResponseEntity<>("Error creating report", HttpStatus.BAD_REQUEST);
         }
 
@@ -62,26 +62,26 @@ public class ReportController {
         {
             if(report.getReservationId() < 0)
             {
-                logger.error("BR - Reservation id can't be negative number");
+                logger.error("BR-ReservationID can't be negative number");
                 return new ResponseEntity<>("Id can't be negative number", HttpStatus.BAD_REQUEST);
             }
 
         }
         else
         {
-            logger.error("BR - Reservation id can't be null");
+            logger.error("BR-ReservationID can't be null");
             return new ResponseEntity<>("Id can't be null", HttpStatus.BAD_REQUEST);
         }
 
 
         if(this.reportService.createReservationReport(report.getReservationId(), report.getContent(), report.getKm()))
         {
-            logger.info("Creating report - Report for reservation id: " + report.getReservationId() + " created");
+            logger.info("Creating report-For reservationID: " + report.getReservationId() + " created");
             return new ResponseEntity("Report successfully created", HttpStatus.CREATED);
         }
         else
         {
-            logger.info("Creating report - Report for reservation id: " + report.getReservationId() + " couldn't be created");
+            logger.info("Creating report-For reservationID: " + report.getReservationId() + " couldn't be created");
             return new ResponseEntity<>("Error creating report", HttpStatus.BAD_REQUEST);
         }
 
