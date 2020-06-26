@@ -1,5 +1,7 @@
 package com.team19.rentmicroservice.model;
 
+import com.github.rkpunjal.sqlsafe.SQLInjectionSafe;
+
 import javax.persistence.*;
 
 @Entity
@@ -10,7 +12,7 @@ public class Report {
     private Long id;
 
     @Column(name="content")
-    private String content;
+    private @SQLInjectionSafe String content;
 
     @Column(name="km")
     private double km;

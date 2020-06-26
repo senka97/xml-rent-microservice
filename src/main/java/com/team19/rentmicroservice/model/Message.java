@@ -1,5 +1,7 @@
 package com.team19.rentmicroservice.model;
 
+import com.github.rkpunjal.sqlsafe.SQLInjectionSafe;
+
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
@@ -10,7 +12,7 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name="content")
-    private String content;
+    private @SQLInjectionSafe String content;
     @Column(name="dateTime")
     private LocalDateTime dateTime;
     //@Column(name="fromUserID")
