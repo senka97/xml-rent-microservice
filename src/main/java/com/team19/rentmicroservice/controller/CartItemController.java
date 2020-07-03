@@ -65,7 +65,7 @@ public class CartItemController {
         CartItemResponseDTO cartItemResponseDTO = cartItemService.addCartItem(cartItemRequestDTO, adOwnerDTO.getOwnerID());
         if(cartItemResponseDTO == null){
             logger.warn(MessageFormat.format("AdID:{0}-already in the cart;UserID:{1}", cartItemRequestDTO.getAdID(), cp.getUserID()));
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This ad for this period is already in the cart.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This ad for this period is already in the cart or this action is disabled for you.");
         }
         logger.info(MessageFormat.format("CI-ID:{0}-created;UserID:{1}", cartItemResponseDTO.getId(), cp.getUserID())); //CI-Cart item
         return new ResponseEntity(cartItemResponseDTO, HttpStatus.CREATED);

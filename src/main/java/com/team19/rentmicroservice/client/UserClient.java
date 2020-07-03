@@ -15,4 +15,12 @@ public interface UserClient {
     List<ClientFrontDTO> fillClients(@RequestBody List<ClientFrontDTO> clientFrontDTOs, @RequestHeader("Authorization") String token);
     @GetMapping("/user/info/{id}")
     UserInfoDTO getUserInfo(@PathVariable("id") Long id, @RequestHeader("Authorization") String token);
+
+    @PutMapping("/client/{id}")
+    void changeNumberForCanceledRequests(@PathVariable("id") Long id, @RequestHeader("permissions") String permissions,
+                                         @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
+
+    @GetMapping("/client/{id}/cart")
+    boolean checkClientCanAddToCart(@PathVariable("id") Long id, @RequestHeader("permissions") String permissions,
+                                    @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
 }

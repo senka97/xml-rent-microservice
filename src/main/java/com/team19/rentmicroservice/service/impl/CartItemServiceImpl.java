@@ -1,6 +1,7 @@
 package com.team19.rentmicroservice.service.impl;
 
 import com.team19.rentmicroservice.client.AdClient;
+import com.team19.rentmicroservice.client.UserClient;
 import com.team19.rentmicroservice.dto.CartItemRequestDTO;
 import com.team19.rentmicroservice.dto.CartItemResponseDTO;
 import com.team19.rentmicroservice.model.Cart;
@@ -26,6 +27,9 @@ public class CartItemServiceImpl implements CartItemService {
     private CartItemRepository cartItemRepository;
     @Autowired
     private CartRepository cartRepository;
+
+    @Autowired
+    private UserClient userClient;
 
     Logger logger = LoggerFactory.getLogger(CartServiceImpl.class);
 
@@ -67,6 +71,10 @@ public class CartItemServiceImpl implements CartItemService {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+
+        if (!userClient.checkClientCanAddToCart(Long.parseLong(cp.getUserID()), cp.getPermissions(), cp.getUserID(), cp.getToken())) {
+            return null;
+        }
         Cart cart = cartRepository.findByClientID(Long.parseLong(cp.getUserID()));
         //ako za tog korisnika ne postoji cart napravi se
         if(cart == null){

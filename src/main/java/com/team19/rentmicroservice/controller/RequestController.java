@@ -135,7 +135,7 @@ public class RequestController {
                     logger.warn(MessageFormat.format("R-ID:{0}-NUR-CF;UserID:{1}", id, cp.getUserID())); //NUR-not user's request, CF-cancel failed
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This is not your request, so you can't change its status.");
                 }else {
-                    this.requestService.rejectRequest(request);
+                    this.requestService.cancelRequest(request);
                     logger.info(MessageFormat.format("R-ID:{0}-canceled;UserID:{1}", id, cp.getUserID()));
                     return ResponseEntity.status(HttpStatus.OK).build();
                 }
