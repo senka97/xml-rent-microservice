@@ -219,8 +219,10 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public void cancelRequest(Request request) {
-
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
         request.setStatus(RequestStatus.Canceled);
+        userClient.changeNumberForCanceledRequests(Long.parseLong(cp.getUserID()), cp.getPermissions(), cp.getUserID(), cp.getToken());
         requestRepository.save(request);
     }
 
