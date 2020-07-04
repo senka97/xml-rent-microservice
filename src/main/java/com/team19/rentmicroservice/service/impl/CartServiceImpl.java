@@ -8,6 +8,7 @@ import com.team19.rentmicroservice.model.CartItem;
 import com.team19.rentmicroservice.repository.CartItemRepository;
 import com.team19.rentmicroservice.repository.CartRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
+import com.team19.rentmicroservice.service.BillService;
 import com.team19.rentmicroservice.service.CartService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,9 @@ public class CartServiceImpl implements CartService {
     private CartItemRepository cartItemRepository;
     @Autowired
     private ReservationServiceImpl reservationService;
+    @Autowired
+    private BillService billService;
+
 
     Logger logger = LoggerFactory.getLogger(CartServiceImpl.class);
 
@@ -68,6 +72,13 @@ public class CartServiceImpl implements CartService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
         Cart cart = cartRepository.findByClientID(Long.parseLong(cp.getUserID()));
+
+        //ako ima neplacene racune ne moze poruciti oglase
+        if(this.billService.clientHasUnpaidBills(Long.parseLong(cp.getUserID())))
+        {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("This user can't make requests due to unpaid bills.");
+        }
+
         //proverim da li postoji cart da ulogovanu osobu
         if(cart == null){
             //return "This user doesn't have a cart and can't make requests.";

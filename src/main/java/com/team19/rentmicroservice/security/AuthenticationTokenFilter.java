@@ -36,7 +36,7 @@ public class AuthenticationTokenFilter extends UsernamePasswordAuthenticationFil
 
             String[] perms = permissions.split("\\|");
             for (String perm : perms) {
-                System.out.println(perm);
+                //System.out.println(perm);
                 authorities.add(new SimpleGrantedAuthority(perm));
             }
 

@@ -29,6 +29,9 @@ public class RequestAd {
     @OneToOne(mappedBy = "requestAd")
     private Report report;
 
+    @OneToOne(mappedBy = "requestAd")
+    private Bill bill;
+
     @Column(name = "reportCreated")
     private Boolean reportCreated;
 
@@ -133,5 +136,13 @@ public class RequestAd {
 
     public void setReportCreated(Boolean reportCreated) {
         this.reportCreated = reportCreated;
+    }
+
+    public Bill getBill() {
+        return bill;
+    }
+
+    public void setBill(Bill bill) {
+        this.bill = bill;
     }
 }
