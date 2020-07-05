@@ -2,11 +2,13 @@ package com.team19.rentmicroservice.service.impl;
 
 import com.team19.rentmicroservice.client.AdClient;
 import com.team19.rentmicroservice.dto.ReportDTO;
+import com.team19.rentmicroservice.model.Bill;
 import com.team19.rentmicroservice.model.Report;
 import com.team19.rentmicroservice.model.RequestAd;
 import com.team19.rentmicroservice.model.Reservation;
 import com.team19.rentmicroservice.repository.ReportRepository;
 import com.team19.rentmicroservice.security.CustomPrincipal;
+import com.team19.rentmicroservice.service.BillService;
 import com.team19.rentmicroservice.service.ReportService;
 import com.team19.rentmicroservice.service.RequestAdService;
 import com.team19.rentmicroservice.service.ReservationService;
@@ -32,6 +34,9 @@ public class ReportServiceImpl implements ReportService {
     private ReservationService reservationService;
 
     @Autowired
+    private BillService billService;
+
+    @Autowired
     private AdClient adClient;
 
     Logger logger = LoggerFactory.getLogger(ReportService.class);
@@ -49,6 +54,8 @@ public class ReportServiceImpl implements ReportService {
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
 
+                Integer adKmLimit = this.adClient.getKmLimit(requestAd.getAdID(), cp.getPermissions(), cp.getUserID(), cp.getToken());
+
                 if (this.adClient.changeMileageAfterReport(requestAd.getAdID(), km, cp.getPermissions(), cp.getUserID(), cp.getToken()))
                 {
                     logger.info("Creating report-Car mileage changed for " + km + "km");
@@ -58,6 +65,15 @@ public class ReportServiceImpl implements ReportService {
                     r.setRequestAd(requestAd);
                     r.setReservation(null);
                     requestAd.setReportCreated(true);
+
+                    if(adKmLimit != 0 && adKmLimit < km) // ako postoji ogranicenje i ako je manje od predjene kilometraze
+                    {
+                        double price = requestAd.getCurrentPricePerKm() * (km - adKmLimit);
+                        System.out.println("Cena zbog prekoracenja: " + price);
+
+                        Bill bill = new Bill(price, requestAd.getClientID(), requestAd, adKmLimit, km-adKmLimit);
+                        billService.save(bill);
+                    }
 
                     requestAdService.save(requestAd);
                     reportRepository.save(r);

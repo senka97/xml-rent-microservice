@@ -49,4 +49,8 @@ public interface AdClient {
     @PutMapping(value="api/ad/{id}/car")
     Boolean changeMileageAfterReport(@PathVariable("id") Long adId, @RequestBody double mileage, @RequestHeader("permissions") String permissions,
                                     @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
+
+    @GetMapping(value = "api/ad/{id}/limitKm")
+    Integer getKmLimit(@PathVariable("id") Long adId, @RequestHeader("permissions") String permissions,
+                      @RequestHeader("userID") String userId, @RequestHeader("Authorization") String token);
 }
