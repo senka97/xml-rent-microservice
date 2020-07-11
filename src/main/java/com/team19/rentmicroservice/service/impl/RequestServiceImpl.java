@@ -6,6 +6,8 @@ import com.team19.rentmicroservice.client.UserClient;
 import com.team19.rentmicroservice.dto.*;
 import com.team19.rentmicroservice.enums.RequestStatus;
 import com.team19.rentmicroservice.model.*;
+import com.team19.rentmicroservice.rabbitmq.MessageMQ;
+import com.team19.rentmicroservice.rabbitmq.Producer;
 import com.team19.rentmicroservice.repository.CartItemRepository;
 import com.team19.rentmicroservice.repository.RequestAdRepository;
 import com.team19.rentmicroservice.repository.RequestRepository;
@@ -47,6 +49,10 @@ public class RequestServiceImpl implements RequestService {
     private RequestAdServiceImpl requestAdService;
     @Autowired
     private UserClient userClient;
+    @Autowired
+    private UserInfoServiceImpl userInfoService;
+    @Autowired
+    private Producer producer;
 
     Logger logger = LoggerFactory.getLogger(RequestServiceImpl.class);
 
@@ -181,6 +187,9 @@ public class RequestServiceImpl implements RequestService {
         request.setStatus(RequestStatus.Paid);
         requestRepository.save(request);
 
+        //******Slanje mejla*******
+        sendEmailForRequestAccept(request);
+
         // omogucavanje postavljanja komentara i ocenjivanje za svaki zahtev
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
@@ -200,9 +209,10 @@ public class RequestServiceImpl implements RequestService {
                 for (Request r : requests) {
                     r.setStatus(RequestStatus.Canceled);
                     logger.info(MessageFormat.format("R-ID:{0}-rejected;UserID:{1}", r.getId(), cp.getUserID())); //R-ID:Request id
+                    //******Slanje mejla*******
+                    sendEmailForRequestReject(r);
                 }
                 requestRepository.saveAll(requests);
-                //ovde bi trebalo poslati mejl da su zahtevi odbijeni
             }
         }
 
@@ -214,7 +224,8 @@ public class RequestServiceImpl implements RequestService {
 
         request.setStatus(RequestStatus.Canceled);
         requestRepository.save(request);
-        //poslati mejl za odbijanje
+        //******Slanje mejla*******
+        sendEmailForRequestReject(request);
     }
 
     @Override
@@ -380,7 +391,8 @@ public class RequestServiceImpl implements RequestService {
                for(Request r: requests){
                    r.setStatus(RequestStatus.Canceled);
                    logger.info(MessageFormat.format("R-ID:{0}-rejected", r.getId()));
-                   //posaljem mejl da je odbijen zahtev
+                   //******Slanje mejla*******
+                   sendEmailForRequestReject(r);
                }
                this.requestRepository.saveAll(requests);
            }
@@ -461,6 +473,8 @@ public class RequestServiceImpl implements RequestService {
         }else{
             r.setStatus(RequestStatus.Canceled);
             this.requestRepository.save(r);
+            //******Slanje mejla*******
+            sendEmailForRequestReject(r);
             logger.info(MessageFormat.format("R-ID:{0}-rejected from agent;UserID:{1}", rpr.getIdMain(), cp.getUserID()));
             RejectPendingRResponse rpResponse = new RejectPendingRResponse();
             rpResponse.setSuccess(true);
@@ -502,6 +516,8 @@ public class RequestServiceImpl implements RequestService {
             //ako nije onda ga prihvatim
             request.setStatus(RequestStatus.Paid);
             requestRepository.save(request);
+            //******Slanje mejla*******
+            sendEmailForRequestAccept(request);
             logger.info(MessageFormat.format("R-ID:{0}-accepted from agent;UserID:{1}", apr.getIdMain(), cp.getUserID()));
 
             // omogucavanje postavljanja komentara i ocenjivanje za svaki zahtev
@@ -523,9 +539,10 @@ public class RequestServiceImpl implements RequestService {
                         r.setStatus(RequestStatus.Canceled);
                         canceledRequest.add(r.getId());
                         logger.info(MessageFormat.format("R-ID:{0}-canceled;UserID:{1}", r.getId(),cp.getUserID()));
+                        //******Slanje mejla*******
+                        sendEmailForRequestReject(r);
                     }
                     requestRepository.saveAll(requests);
-                    //ovde bi trebalo poslati mejl da su zahtevi odbijeni
                 }
             }
 
@@ -536,6 +553,69 @@ public class RequestServiceImpl implements RequestService {
             apResponse.setMessage("Request successfully accepted in the main app.");
             return apResponse;
         }
+    }
+
+    void sendEmailForRequestAccept(Request request){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+        MessageMQ message = new MessageMQ();
+        message.setSubject("Request accepted.");
+        String msgStr = "Hello,\n\n";
+        for(RequestAd ra : request.getRequestAds()){
+            msgStr += "Your request for the ad with id " + ra.getAdID() + " for the period from " + ra.getStartDate().toString() + " to " + ra.getEndDate().toString() + " has been accepted.\n";
+        }
+        msgStr += "\nBest regards,\nRent-A-Car team";
+        message.setContent(msgStr);
+        UserInfo userInfo = userInfoService.findUserInfoByUserId((request.getClientID()));
+        if(userInfo == null){
+            UserInfoDTO userInfoDTO = this.userClient.getUserInfo(request.getClientID(),cp.getToken());
+            userInfo = new UserInfo(userInfoDTO);
+            userInfo = this.userInfoService.saveUserInfo(userInfo);
+        }
+        message.setEmail(userInfo.getEmail());
+        this.producer.addToMessageQueue("message-queue", message);
+    }
+
+    void sendEmailForRequestReject(Request request){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+        MessageMQ message = new MessageMQ();
+        message.setSubject("Request rejected.");
+        String msgStr = "Hello,\n\n";
+        for(RequestAd ra : request.getRequestAds()){
+            msgStr += "Your request for the ad with id " + ra.getAdID() + " for the period from " + ra.getStartDate().toString() + " to " + ra.getEndDate().toString() + " has been rejected.\n";
+        }
+        msgStr += "\nBest regards,\nRent-A-Car team";
+        message.setContent(msgStr);
+        UserInfo userInfo = userInfoService.findUserInfoByUserId((request.getClientID()));
+        if(userInfo == null){
+            UserInfoDTO userInfoDTO = this.userClient.getUserInfo(request.getClientID(),cp.getToken());
+            userInfo = new UserInfo(userInfoDTO);
+            userInfo = this.userInfoService.saveUserInfo(userInfo);
+        }
+        message.setEmail(userInfo.getEmail());
+        this.producer.addToMessageQueue("message-queue", message);
+    }
+
+    void sendEmailForRequestCancel(Request request){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomPrincipal cp = (CustomPrincipal) auth.getPrincipal();
+        MessageMQ message = new MessageMQ();
+        message.setSubject("Request canceled.");
+        String msgStr = "Hello,\n\n";
+        for(RequestAd ra : request.getRequestAds()){
+            msgStr += "Your request for the ad with id " + ra.getAdID() + " for the period from " + ra.getStartDate().toString() + " to " + ra.getEndDate().toString() + " has been canceled.\n";
+        }
+        msgStr += "\nBest regards,\nRent-A-Car team";
+        message.setContent(msgStr);
+        UserInfo userInfo = userInfoService.findUserInfoByUserId((request.getOwnerID()));
+        if(userInfo == null){
+            UserInfoDTO userInfoDTO = this.userClient.getUserInfo(request.getOwnerID(),cp.getToken());
+            userInfo = new UserInfo(userInfoDTO);
+            userInfo = this.userInfoService.saveUserInfo(userInfo);
+        }
+        message.setEmail(userInfo.getEmail());
+        this.producer.addToMessageQueue("message-queue", message);
     }
 
 }
