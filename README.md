@@ -19,5 +19,6 @@ Frontend aplikacija: https://github.com/senka97/xml-front
 
 Korišćene tehnologije:
 
- - Backend: Spring Boot, MySQL v8.0.18
- - Frontend: Vue.js
+  - Spring Boot
+  - MySQL v8.0.18
+  - SOAP
